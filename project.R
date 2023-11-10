@@ -16,8 +16,9 @@ par(mfrow=c(1,1))
 
 # Load data
 #getwd()
-#setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/assignment 1")
-setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
+setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/assignment 1")
+#setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
+
 train<-read.delim("train.csv", sep=',') 
 
 # Explore dataset
@@ -76,14 +77,12 @@ dim(train2)
 
 ## numeric variable description function
 numeric_description <- function(variable, n_breaks) {
-  column_name <- sub(".+\\$", "", deparse(substitute(variable)))
-  
   cat("Summary:\n")
   print(summary(variable))
-
+  
   cat("\nCount of missing values:",sum(is.na(variable)),"\n")
-
-  hist(variable, breaks = n_breaks, freq = F, main = paste("Histograma de", column_name), xlab = column_name)
+  
+  hist(variable, breaks = n_breaks, freq = F)
   curve(dnorm(x, mean(variable), sd(variable)), add = T)
   
   # Normality test with Shapiro-Wilk
@@ -474,11 +473,13 @@ skim(train2)
 sum(is.na(train2$LotFrontage))
 sum(is.na(train2$MasVnrArea))
 sum(is.na(train2$GarageYrBlt)) # what do with this ?
+
 ## impute
+# exclude GarageYrBlt feature because it has no sense to impute this variable
 
+mice_imp<-mice(train2[, !names(train2) %in% "GarageYrBlt"],method = "cart")
 
-mice_imp<-mice(train2,method = "cart")
-densityplot(train2)
+#densityplot(train2)
 imputed_data<-complete(mice_imp)
 # LotFrontage validation
 summary(imputed_data$LotFrontage)
@@ -495,11 +496,21 @@ plot(density(imputed_data$MasVnrArea,na.rm=TRUE))
 # imputation doesnt change much the density nor summary
 
 ### data quality exploration
+# ORDRE QUE SEGUEIX A L'EXEMPLE
+max(imputed_data$univ_outl_count) #9
+imputed_data[which(imputed_data$univ_outl_count == 9),]
+#df_of_interest = imputed_data[,c(2,3,5,7,8,9,18)] -- canviar nums columnes
+#cor_outl = cor(df_of_interest)
+#require(corrplot)
+#par(mfrow=c(1,1))
+#corrplot(cor_outl, method = 'number')
 
 raredata<-imputed_data[which(train2$univ_outl_count>2),]
 ## fer lo dels NAS!!!
-cor_outl <- cor(imputed_data[,num_cols])
+num_cols <- num_cols[num_cols != "GarageYrBlt"]
+cor_outl <- cor(imputed_data[,c(num_cols)])
 require(corrplot)
+
 ######################-----
 # modeling
 # RSS function
@@ -523,3 +534,24 @@ summary(mod.fow)
 ## selection of the variables: LotArea, OverallQual, OverallCond, MasVnrArea, BsmtFinSF2
 ## X1stFlrSF, FullBath, GarageCars, BsmtQualGd
 
+
+######-----
+#Multivariate outliers
+require(chemometrics)
+#num_cols <- num_cols[num_cols != "GarageYrBlt"]
+num_cols <- num_cols[num_cols != "Id"]
+res.out <- Moutlier(imputed_data[,c(num_cols)], quantile = 0.9995, col="green")
+# da error
+#Esto generalmente significa que hay colinealidad perfecta o casi perfecta entre algunas de las variables en tus datos.
+#La colinealidad perfecta ocurre cuando hay una relación lineal exacta entre dos o más variables, lo que puede causar problemas numéricos durante el cálculo.
+cor_matrix <- cor(imputed_data[, c(num_cols)])
+corrplot(cor_matrix, method = "color")
+# veiem que X1stFlrSF està molt correlacionat amb TotalBsmtSF
+# tambe que GarageArea està correlacionat amb GarageCars
+cols <- c("X1stFlrSF", "GarageArea") #les que menys associació tenen amb la target variable
+df_of_interest <- imputed_data[, !(colnames(imputed_data) %in% cols)]
+num_cols <- num_cols[! num_cols %in% cols ]
+res.out <- Moutlier(df_of_interest[,c(num_cols)], quantile = 0.9995, col="green")
+cor_matrix <- cor(df_of_interest[, c(num_cols)])
+corrplot(cor_matrix, method = "color")
+# les que queden no tenen tanta correlacio, no se per quina es

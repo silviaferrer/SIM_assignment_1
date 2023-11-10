@@ -5,6 +5,10 @@ library(tidyverse)
 library(skimr)
 library(FactoMineR)
 library(car)
+library(lmtest)
+library(ISLR)
+library(arm)
+library(mice)
 
 # Clear space
 rm(list=ls())
@@ -12,8 +16,8 @@ par(mfrow=c(1,1))
 
 # Load data
 #getwd()
-setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/assignment 1")
-#setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
+#setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/assignment 1")
+setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
 train<-read.delim("train.csv", sep=',') 
 
 # Explore dataset
@@ -47,7 +51,7 @@ train[, char_cols] <- lapply(train[, char_cols], as.factor)
 # Recode: numeric to factor
 train$MSSubClass <- factor(train$MSSubClass)
 train$MoSold <- factor(train$MoSold) # month 
-train$GarageYrBlt<-factor(train$GarageYrBlt) 
+#train$GarageYrBlt<-factor(train$GarageYrBlt) 
 #train$OverallCond <- factor(train$OverallCond)
 #train$OverallQual <- factor(train$OverallQual)
 
@@ -131,94 +135,92 @@ names(train2)
 ### Numerical variables
 ## Id (not considered for the analysis)
 
-## "LotFrontage" Linear feet of street connected to property (num)
+## "LotFrontage" Linear feet of street connected to property (cont)
 numeric_description(train2$LotFrontage, 30)
 # not normal distribution
 analyze_outliers(train2, "LotFrontage")
 train2 <- update_outliers_count(train2, "LotFrontage")
 
-## "LotArea" Lot size in square feet (num)
+## "LotArea" Lot size in square feet (cont)
 numeric_description(train2$LotArea, 20)
 # not normal distribution
 analyze_outliers(train2, "LotArea")
 train2 <- update_outliers_count(train2, "LotArea")
 
-## "OverallQual"
+## "OverallQual" (cont)
 numeric_description(train2$OverallQual, 10)
 # not normal distribution
 analyze_outliers(train2, "OverallQual")
 train2 <- update_outliers_count(train2, "OverallQual")
 
-## "YearBuilt"
-numeric_description(train2$YearBuilt, 10)
-# not normal distribution
+## "YearBuilt" (int)
+summary(train2$YearBuilt)
+barplot(table(train2$YearBuilt), main = "Distribution of Year Built",xlab = "Year",col = "skyblue")
+sum(is.na(train2$YearBuilt))
 analyze_outliers(train2, "YearBuilt")
 train2 <- update_outliers_count(train2, "YearBuilt")
 
-## "YearRemodAdd"
-numeric_description(train2$YearRemodAdd, 10)
-# not normal distribution
+## "YearRemodAdd" (int) - Remodel date (same as construction date if no remodeling or additions)
+summary(train2$YearRemodAdd)
+barplot(table(train2$YearRemodAdd), main = "Distribution of Year Remodelized",xlab = "Year",col = "skyblue")
+sum(is.na(train2$YearRemodAdd))
 analyze_outliers(train2, "YearRemodAdd")
 train2 <- update_outliers_count(train2, "YearRemodAdd")
 
-## MasVnrArea - Masonry veneer area in square feet
+
+## MasVnrArea - Masonry veneer area in square feet (cont)
 numeric_description(train2$MasVnrArea, 10)
 # not normal distribution
 analyze_outliers(train2,"MasVnrArea")
 train2 <- update_outliers_count(train2, "MasVnrArea")
-
-## "MasVnrArea" - Masonry veneer area in square feet - continuous ratio variable
-# mirar ?
-# els 0 poden ser veritat
 # comparar amb variable MasVnrType
 # si el type != None i es 0 -> convertir en NA
 train2$MasVnrArea[which(train2$MasVnrArea == 0)] <- NA
 none_idx <- which(train$MasVnrType == 'None')
 train2$MasVnrArea[none_idx] <- 0
-Boxplot(train2$MasVnrArea)
-sm<-summary(train2$MasVnrArea)
-iqr <- sm["3rd Qu."]-sm["1st Qu."]; iqr
-train2$f.MasVnrArea <- ifelse(train2$MasVnrArea <= sm["1st Qu."], 1, ifelse(train2$MasVnrArea > sm["1st Qu."] & train2$MasVnrArea < sm["Median"], 2, ifelse(train2$MasVnrArea >= sm["Median"] & train2$MasVnrArea <= sm["3rd Qu."], 3, ifelse(train2$MasVnrArea > sm["3rd Qu."], 4,0))))
-train2$f.MasVnrArea <- factor(train2$f.MasVnrArea,labels=c("LowmasVnrArea","LowMidmasVnrArea","HighMidmasVnrArea","HighmasVnrArea"), order = T, levels=c(1,2,3,4))
-table(train2$f.MasVnrArea)
+#Boxplot(train2$MasVnrArea)
+#sm<-summary(train2$MasVnrArea)
+#iqr <- sm["3rd Qu."]-sm["1st Qu."]; iqr
+#train2$f.MasVnrArea <- ifelse(train2$MasVnrArea <= sm["1st Qu."], 1, ifelse(train2$MasVnrArea > sm["1st Qu."] & train2$MasVnrArea < sm["Median"], 2, ifelse(train2$MasVnrArea >= sm["Median"] & train2$MasVnrArea <= sm["3rd Qu."], 3, ifelse(train2$MasVnrArea > sm["3rd Qu."], 4,0))))
+#train2$f.MasVnrArea <- factor(train2$f.MasVnrArea,labels=c("LowmasVnrArea","LowMidmasVnrArea","HighMidmasVnrArea","HighmasVnrArea"), order = T, levels=c(1,2,3,4))
+#table(train2$f.MasVnrArea)
 
 
-## "BsmtFinSF1" - Type 1 finished square feet
+## "BsmtFinSF1" - Type 1 finished square feet (cont)
 numeric_description(train2$BsmtFinSF1, 10)
 # not normal distribution
 analyze_outliers(train2,"BsmtFinSF1")
 train2 <- update_outliers_count(train2, "BsmtFinSF1")
 
 
-# BsmtFinSF2 - Rating of basement finished area (if multiple types)
+# BsmtFinSF2 - Rating of basement finished area (if multiple types) (cont)
 numeric_description(train2$BsmtFinSF2, 10)
 # not normal distribution
 analyze_outliers(train2,"BsmtFinSF2")
 train2 <- update_outliers_count(train2, "BsmtFinSF2")
 
-# "BsmtUnfSF"
-numeric_description(train2$BsmtUnfSF, 10)
+# "BsmtUnfSF" (cont)
+numeric_description(train2$BsmtUnfSF, 20)
 # not normal distribution
 analyze_outliers(train2,"BsmtUnfSF")
 train2 <- update_outliers_count(train2, "BsmtUnfSF")
 
-# "TotalBsmtSF"
+# "TotalBsmtSF" (cont)
 numeric_description(train2$TotalBsmtSF, 10)
 # not normal distribution
 analyze_outliers(train2,"TotalBsmtSF")
 train2 <- update_outliers_count(train2, "TotalBsmtSF")
 
 
-# X1stFlrSF - First Floor square feet
+# X1stFlrSF - First Floor square feet (cont)
 numeric_description(train2$X1stFlrSF, 10)
 # not normal distribution
 analyze_outliers(train2,"X1stFlrSF")
 train2 <- update_outliers_count(train2, "X1stFlrSF")
 
-## X2ndFlrSF - Second floor square feet
+## X2ndFlrSF - Second floor square feet (cont)
 numeric_description(train2$X2ndFlrSF, 10)
 # not normal distribution
-# doesnt make sense to have 0 square feet floor -> reconvert to NA/ doesnt have a second floor.
 analyze_outliers(train2,"X2ndFlrSF")
 train2 <- update_outliers_count(train2, "X2ndFlrSF")
 # create a new variable if has second floor = 1 / not second floor = 0. 
@@ -228,44 +230,48 @@ train2$secondfloor<-factor(train2$secondfloor)
 table(train2$secondfloor) 
 
 
-## LowQualFinSF - Low quality finished square feet (all floors)
+## LowQualFinSF - Low quality finished square feet (all floors) (cont)
 numeric_description(train2$LowQualFinSF, 10)
 # not normal distribution
 table(train2$LowQualFinSF)# very centered in 0 
 analyze_outliers(train2,"LowQualFinSF")
 train2 <- update_outliers_count(train2, "LowQualFinSF")
 
-## GrLivArea - Above grade (ground) living area square feet # m2 habitables per sobre del nivell 0
+## GrLivArea - Above grade (ground) living area square feet (cont)
 numeric_description(train2$GrLivArea, 20)
 # not normal distribution
 analyze_outliers(train2,"GrLivArea")
 train2 <- update_outliers_count(train2, "GrLivArea")
 
-## BsmtFullBath - # full baths in the basement (factor?)
+## BsmtFullBath - # full baths in the basement (int)
 summary(train2$BsmtFullBath) 
 table(train2$BsmtFullBath)
 sum(is.na(train2$BsmtFullBath))
+barplot(table(train2$BsmtFullBath), main = "Distribution of Baths in the basement",xlab = "Number of Baths",col = "skyblue")
 #train2$BsmtFullBath<- factor(train2$BsmtFullBath,labels=c("0","1","2","3 or more"), order = T, levels=c(0,1,2,3))
 #plot(train2$BsmtFullBath)
 
-## BsmtHalfBath - # half baths in the basement (factor?)
+## BsmtHalfBath - # half baths in the basement (int)
 summary(train2$BsmtHalfBath) 
-table(train2$BsmtHalfBath)
+table(train2$BsmtHalfBath) # very centered in 0
 sum(is.na(train2$BsmtHalfBath))
+barplot(table(train2$BsmtHalfBath), main = "Distribution of Half Baths in the basement",xlab = "Number of Baths",col = "skyblue")
 #train2$BsmtHalfBath<- factor(train2$BsmtHalfBath,labels=c("0","1","2 or more"), order = T, levels=c(0,1,2))
 #plot(train2$BsmtHalfBath)
 
-## FullBath - full baths above grade (factor?)
+## FullBath - full baths above grade (int)
 summary(train2$FullBath) 
 table(train2$FullBath)
 sum(is.na(train2$FullBath))
+barplot(table(train2$FullBath), main = "Distribution of Baths above grade",xlab = "Number of Baths",col = "skyblue")
 #train2$FullBath<- factor(train2$FullBath,labels=c("0","1","2","3 or more"), order = T, levels=c(0,1,2,3))
 #plot(train2$FullBath)
 
-## HalfBath - Half baths above grade (factor?)
+## HalfBath - Half baths above grade (int)
 summary(train2$HalfBath) 
 table(train2$HalfBath)
 sum(is.na(train2$HalfBath))
+barplot(table(train2$HalfBath), main = "Distribution of Half Baths above grade",xlab = "Number of Baths",col = "skyblue")
 #train2$HalfBath<- factor(train2$HalfBath,labels=c("0","1","2 or more"), order = T, levels=c(0,1,2))
 #plot(train2$HalfBath)
 
@@ -273,13 +279,15 @@ sum(is.na(train2$HalfBath))
 summary(train2$BedroomAbvGr) 
 table(train2$BedroomAbvGr)
 sum(is.na(train2$BedroomAbvGr))
+barplot(table(train2$BedroomAbvGr), main = "Distribution of Bedrooms above grade",xlab = "Number of Bedrooms",col = "skyblue")
 #train2$BedroomAbvGr<- factor(train2$BedroomAbvGr,labels=c("0","1","2","3","4","5 or more"), order = T, levels=c(0,1,2,3,4,5))
 #plot(train2$BedroomAbvGr)
 
-## KitchenAbvGr - Kitchens above grade (factor?)
+## KitchenAbvGr - Kitchens above grade (int)
 summary(train2$KitchenAbvGr) 
 table(train2$KitchenAbvGr)
 sum(is.na(train2$KitchenAbvGr))
+barplot(table(train2$KitchenAbvGr), main = "Distribution of Kitchens",xlab = "Number of Kitchens",col = "skyblue")
 #train2$KitchenAbvGr<- factor(train2$KitchenAbvGr,labels=c("0","1","2","3 or more"), order = T, levels=c(0,1,2,3))
 #plot(train2$KitchenAbvGr) # very centered variable 
 
@@ -300,28 +308,25 @@ length(which(train2$TotRmsAbvGrd > sevout_TotRmsAbvGrd))
 #table(df$f.mileage)
 analyze_outliers(train2,"TotRmsAbvGrd")
 
-## "Fireplaces" - Number of fireplaces - continuous ratio variable (discreta/categorica)
+
+## "Fireplaces" - Number of fireplaces (int)
 summary(train2$Fireplaces)
 table(train2$Fireplaces)
 sum(is.na(train2$Fireplaces)) #0
-Boxplot(train2$Fireplaces) # nose si te sentit el boxplot aqui
-length(Boxplot(train2$Fireplaces, id = list(n=Inf))) #30
-sevout_Fireplaces = (quantile(train2$Fireplaces,0.25)+(3*((quantile(train2$Fireplaces,0.75)-quantile(train2$Fireplaces,0.25)))))
-length(which(train2$Fireplaces > sevout_Fireplaces))
-train2$Fireplaces<- factor(train2$Fireplaces,labels=c("0","1","2","3 or more"), order = T, levels=c(0,1,2,3))
-table(train2$Fireplaces)
+analyze_outliers(train2, "Fireplaces") 
+#train2$Fireplaces<- factor(train2$Fireplaces,labels=c("0","1","2","3 or more"), order = T, levels=c(0,1,2,3))
 barplot(table(train2$Fireplaces), main = "Distribution of fireplaces",xlab = "Number of Fireplaces",col = "skyblue")
 
-## "GarageCars" - Size of garage in car capacity - continuous ratio variable (factor?)
+## "GarageCars" - Size of garage in car capacity (int)
 summary(train2$GarageCars)
 table(train2$GarageCars)
 sum(is.na(train2$GarageCars)) #0
 #train2$GarageCars <- factor(train2$GarageCars,labels=c("0","1","2","3","4 or more"), order = T, levels=c(0,1,2,3,4))
-table(train2$GarageCars)
-#barplot(train2$f.GarageCars)
 analyze_outliers(train2, "GarageCars") 
+barplot(table(train2$GarageCars), main = "Distribution of Garage Cars",xlab = "Number of Garage Cars",col = "skyblue")
 
-## "GarageArea" - Size of garage in square feet - continuous ratio variable (continua)
+
+## "GarageArea" - Size of garage in square feet (cont)
 numeric_description(train2$GarageArea, 30)
 # not normal distribution
 analyze_outliers(train2, "GarageArea")
@@ -361,55 +366,60 @@ train2$f.OpenPorchSF <- ifelse(train2$OpenPorchSF <= sm["1st Qu."], 1, ifelse(tr
 train2$f.OpenPorchSF <- factor(train2$f.OpenPorchSF,labels=c("LowopenPorchSF","LowMidopenPorchSF","HighMidopenPorchSFF","HighopenPorchSF"), order = T, levels=c(1,2,3,4))
 table(train2$f.OpenPorchSF)
 
-## EnclosedPorch - Enclosed porch area in square feet
+## EnclosedPorch - Enclosed porch area in square feet (cont)
 summary(train2$EnclosedPorch)
 table(train2$EnclosedPorch) # very centered data in 0
 sum(is.na(train2$EnclosedPorch))
-barplot(table(train2$EnclosedPorch), main = "Distribution of ",xlab = "Number of ",col = "skyblue")
-# very centered data in 0
+hist(train2$EnclosedPorch, breaks = 30, freq = F)
 # therefore we will create a factor 0 if they dont have enclosed porch area,1 if they do have.
 train2$EnclosedPorch_binary<-0
 train2$EnclosedPorch_binary[which(train2$EnclosedPorch!=0)]<-1
 train2$EnclosedPorch_binary
 table(train2$EnclosedPorch_binary)
 
-## X3SsnPorch - Three season porch area in square feet (int)
-summary(train2$X3SsnPorch)
-sum(is.na(train2$X3SsnPorch)) #0
+## X3SsnPorch - Three season porch area in square feet (cont)
+numeric_description(train2$X3SsnPorch, 30)
 table(train2$X3SsnPorch) # very centered in 0 -> dont have three season porch
-barplot(table(train2$X3SsnPorch), main = "Distribution of ",xlab = "Number of ",col = "skyblue")
-# very centered variable
+analyze_outliers(train2,"X3SsnPorch")
+train2 <- update_outliers_count(train2, "X3SsnPorch")
 
 
-## ScreenPorch - Screen porch area in square feet
+## ScreenPorch - Screen porch area in square feet (cont)
 numeric_description(train2$ScreenPorch, 30)
 # not normally distributed
 table(train2$ScreenPorch) # very centered in 0 -> dont have screen porch
 analyze_outliers(train2,"ScreenPorch")
 train2 <- update_outliers_count(train2, "ScreenPorch")
 
-## PoolArea - Pool area in square feet
+## PoolArea - Pool area in square feet (cont)
 numeric_description(train2$PoolArea, 30)
 # not normally distributed
 table(train2$PoolArea) # very centered in 0 -> dont have pool
 analyze_outliers(train2,"PoolArea")
 train2 <- update_outliers_count(train2, "PoolArea")
+# create a new variable : 0=no pool/1= pool
+train2$Pool_binary<-0
+train2$Pool_binary[which(train2$PoolArea!=0)]<-1
+train2$Pool_binary
+table(train2$Pool_binary) # not very usefull , the majority dont have pools
 
-## MiscVal - $Value of miscellaneous feature
+## MiscVal - $Value of miscellaneous feature (cont)
 numeric_description(train2$MiscVal, 30)
 # not normally distributed
-table(train2$MiscVal) # very centered in 0 -> dont have pool
+table(train2$MiscVal) # very centered in 0 
 analyze_outliers(train2,"MiscVal")
 train2 <- update_outliers_count(train2, "MiscVal")
 
-## YrSold - 
+## YrSold - (int)
 numeric_description(train2$YrSold, 30)
 # not normally distributed
 table(train2$YrSold) 
 analyze_outliers(train2,"YrSold")
 train2 <- update_outliers_count(train2, "YrSold")
 
-## Neighborhood (categorical)
+### categorical variables
+
+## Neighborhood 
 sum(is.na(train2$Neighborhood)) #0
 table(train2$Neighborhood)
 barplot(table(train2$Neighborhood), main = "Distribution of Neighborhood",xlab = "Number of Neighborhood",col = "skyblue")
@@ -462,8 +472,32 @@ skim(train2)
 sum(is.na(train2$LotFrontage))
 sum(is.na(train2$MasVnrArea))
 sum(is.na(train2$GarageYrBlt)) # what do with this ?
-## impute? 
+## impute
 
+
+mice_imp<-mice(train2,method = "cart")
+densityplot(train2)
+imputed_data<-complete(mice_imp)
+# LotFrontage validation
+summary(imputed_data$LotFrontage)
+summary(train2$LotFrontage)
+plot(density(train2$LotFrontage,na.rm=TRUE))
+plot(density(imputed_data$LotFrontage,na.rm=TRUE))
+# imputation doesnt change much the density nor summary
+
+# MasVnrArea validation
+summary(imputed_data$MasVnrArea)
+summary(train2$MasVnrArea)
+plot(density(train2$MasVnrArea,na.rm=TRUE))
+plot(density(imputed_data$MasVnrArea,na.rm=TRUE))
+# imputation doesnt change much the density nor summary
+
+### data quality exploration
+
+raredata<-imputed_data[which(train2$univ_outl_count>2),]
+## fer lo dels NAS!!!
+cor_outl <- cor(imputed_data[,num_cols])
+require(corrplot)
 ######################-----
 # modeling
 # RSS function
@@ -483,5 +517,7 @@ anova(m0,m1) # per veure quin model és millor
 mod.fow <- stats::step(lm(SalePrice ~ ., data = train2), trace = FALSE,
                        direction = "forward")
 summary(mod.fow)
+
 ## selection of the variables: LotArea, OverallQual, OverallCond, MasVnrArea, BsmtFinSF2
 ## X1stFlrSF, FullBath, GarageCars, BsmtQualGd
+

@@ -12,8 +12,8 @@ par(mfrow=c(1,1))
 
 # Load data
 #getwd()
-#setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/assignment 1")
-setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
+setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/assignment 1")
+#setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
 train<-read.delim("train.csv", sep=',') 
 
 # Explore dataset
@@ -70,6 +70,19 @@ dim(train2)
 # we make the following assumptions : 
 # choose the 10 categorical variables that are more correlated with the target variable
 
+## numeric variable description function
+numeric_description <- function(variable, n_breaks) {
+  cat("Summary:\n")
+  print(summary(variable))
+
+  cat("\nCount of missing values:",sum(is.na(variable)),"\n")
+
+  hist(variable, breaks = n_breaks, freq = F)
+  curve(dnorm(x, mean(variable), sd(variable)), add = T)
+  
+  # Normality test with Shapiro-Wilk
+  print(shapiro.test(variable))
+}
 
 ## outliers functions
 analyze_outliers <- function(data, column_name) {
@@ -119,54 +132,38 @@ names(train2)
 ## Id (not considered for the analysis)
 
 ## "LotFrontage" Linear feet of street connected to property (num)
-summary(train2$LotFrontage)
-sum(is.na(train2$LotFrontage))
-hist(train2$LotFrontage, breaks = 30, freq = F)
-curve(dnorm(x, mean(train2$LotFrontage), sd(train2$LotFrontage)), add = T)
-shapiro.test(train2$LotFrontage) # not normal
+numeric_description(train2$LotFrontage, 30)
+# not normal distribution
 analyze_outliers(train2, "LotFrontage")
 train2 <- update_outliers_count(train2, "LotFrontage")
 
 ## "LotArea" Lot size in square feet (num)
-summary(train2$LotArea)
-sum(is.na(train2$LotArea))
-shapiro.test(train2$LotArea)
-hist(train2$LotArea, breaks = 20, freq = F)
-curve(dnorm(x, mean(train2$LotArea), sd(train2$LotArea)), add = T)
+numeric_description(train2$LotArea, 20)
+# not normal distribution
 analyze_outliers(train2, "LotArea")
 train2 <- update_outliers_count(train2, "LotArea")
 
 ## "OverallQual"
-summary(train2$OverallQual)
-sum(is.na(train2$OverallQual))
-hist(train2$OverallQual, breaks = 10, freq = F)
-curve(dnorm(x, mean(train2$OverallQual), sd(train2$OverallQual)), add = T)
-shapiro.test(train2$OverallQual)
+numeric_description(train2$OverallQual, 10)
+# not normal distribution
 analyze_outliers(train2, "OverallQual")
 train2 <- update_outliers_count(train2, "OverallQual")
 
 ## "YearBuilt"
-summary(train2$YearBuilt)
-hist(train2$YearBuilt, breaks = 10, freq = F)
-curve(dnorm(x, mean(train2$YearBuilt), sd(train2$YearBuilt)), add = T)
-sum(is.na(train2$YearBuilt))
+numeric_description(train2$YearBuilt, 10)
+# not normal distribution
 analyze_outliers(train2, "YearBuilt")
 train2 <- update_outliers_count(train2, "YearBuilt")
 
 ## "YearRemodAdd"
-summary(train2$YearRemodAdd)
-hist(train2$YearRemodAdd, breaks = 10, freq = F)
-curve(dnorm(x, mean(train2$YearRemodAdd), sd(train2$YearRemodAdd)), add = T)
-sum(is.na(train2$YearRemodAdd))
+numeric_description(train2$YearRemodAdd, 10)
+# not normal distribution
 analyze_outliers(train2, "YearRemodAdd")
 train2 <- update_outliers_count(train2, "YearRemodAdd")
 
 ## MasVnrArea - Masonry veneer area in square feet
-summary(train2$MasVnrArea)
-hist(train2$MasVnrArea, breaks = 10, freq = F)
-curve(dnorm(x, mean(train2$MasVnrArea), sd(train2$MasVnrArea)), add = T)
-sum(is.na(train2$MasVnrArea))  # 8 NAs
-shapiro.test(train$MasVnrArea) # Not normal
+numeric_description(train2$MasVnrArea, 10)
+# not normal distribution
 analyze_outliers(train2,"MasVnrArea")
 train2 <- update_outliers_count(train2, "MasVnrArea")
 
@@ -187,59 +184,41 @@ table(train2$f.MasVnrArea)
 
 
 ## "BsmtFinSF1" - Type 1 finished square feet
-summary(train2$BsmtFinSF1)
-sum(is.na(train2$BsmtFinSF1))
-hist(train2$BsmtFinSF1, breaks = 10, freq = F)
-curve(dnorm(x, mean(train2$BsmtFinSF1), sd(train2$BsmtFinSF1)), add = T)
-shapiro.test(train2$BsmtFinSF1)
+numeric_description(train2$BsmtFinSF1, 10)
+# not normal distribution
 analyze_outliers(train2,"BsmtFinSF1")
 train2 <- update_outliers_count(train2, "BsmtFinSF1")
 
 
 # BsmtFinSF2 - Rating of basement finished area (if multiple types)
-summary(train2$BsmtFinSF2)
-sum(is.na(train2$BsmtFinSF2))
-hist(train2$BsmtFinSF2, breaks = 10, freq = F)
-curve(dnorm(x, mean(train2$BsmtFinSF2), sd(train2$BsmtFinSF2)), add = T)
-shapiro.test(train2$BsmtFinSF2)
+numeric_description(train2$BsmtFinSF2, 10)
+# not normal distribution
 analyze_outliers(train2,"BsmtFinSF2")
 train2 <- update_outliers_count(train2, "BsmtFinSF2")
 
 # "BsmtUnfSF"
-summary(train2$BsmtUnfSF)
-sum(is.na(train2$BsmtUnfSF))
-hist(train2$BsmtUnfSF, breaks = 10, freq = F)
-curve(dnorm(x, mean(train2$BsmtUnfSF), sd(train2$BsmtUnfSF)), add = T)
-shapiro.test(train2$BsmtUnfSF)
+numeric_description(train2$BsmtUnfSF, 10)
+# not normal distribution
 analyze_outliers(train2,"BsmtUnfSF")
 train2 <- update_outliers_count(train2, "BsmtUnfSF")
 
 # "TotalBsmtSF"
-summary(train2$TotalBsmtSF)
-sum(is.na(train2$TotalBsmtSF))
-hist(train2$TotalBsmtSF, breaks = 10, freq = F)
-curve(dnorm(x, mean(train2$TotalBsmtSF), sd(train2$TotalBsmtSF)), add = T)
-shapiro.test(train2$TotalBsmtSF)
+numeric_description(train2$TotalBsmtSF, 10)
+# not normal distribution
 analyze_outliers(train2,"TotalBsmtSF")
 train2 <- update_outliers_count(train2, "TotalBsmtSF")
 
 
 # X1stFlrSF - First Floor square feet
-summary(train2$X1stFlrSF)
-sum(is.na(train2$X1stFlrSF))
-hist(train2$X1stFlrSF, breaks = 10, freq = F)
-curve(dnorm(x, mean(train2$X1stFlrSF), sd(train2$X1stFlrSF)), add = T)
-shapiro.test(train2$X1stFlrSF)
+numeric_description(train2$X1stFlrSF, 10)
+# not normal distribution
 analyze_outliers(train2,"X1stFlrSF")
 train2 <- update_outliers_count(train2, "X1stFlrSF")
 
 ## X2ndFlrSF - Second floor square feet
-summary(train2$X2ndFlrSF)
-sum(is.na(train2$X2ndFlrSF))
-hist(train2$X2ndFlrSF, breaks = 10, freq = F)
+numeric_description(train2$X2ndFlrSF, 10)
+# not normal distribution
 # doesnt make sense to have 0 square feet floor -> reconvert to NA/ doesnt have a second floor.
-curve(dnorm(x, mean(train2$X2ndFlrSF), sd(train2$X2ndFlrSF)), add = T)
-shapiro.test(train2$X2ndFlrSF)
 analyze_outliers(train2,"X2ndFlrSF")
 train2 <- update_outliers_count(train2, "X2ndFlrSF")
 # create a new variable if has second floor = 1 / not second floor = 0. 
@@ -250,21 +229,15 @@ table(train2$secondfloor)
 
 
 ## LowQualFinSF - Low quality finished square feet (all floors)
-summary(train2$LowQualFinSF)
+numeric_description(train2$LowQualFinSF, 10)
+# not normal distribution
 table(train2$LowQualFinSF)# very centered in 0 
-sum(is.na(train2$LowQualFinSF))
-hist(train2$LowQualFinSF, breaks = 10, freq = F)
-curve(dnorm(x, mean(train2$LowQualFinSF), sd(train2$LowQualFinSF)), add = T)
-shapiro.test(train2$LowQualFinSF)
 analyze_outliers(train2,"LowQualFinSF")
 train2 <- update_outliers_count(train2, "LowQualFinSF")
 
 ## GrLivArea - Above grade (ground) living area square feet # m2 habitables per sobre del nivell 0
-summary(train2$GrLivArea) 
-sum(is.na(train2$GrLivArea))
-hist(train2$GrLivArea, breaks = 20, freq = F)
-curve(dnorm(x, mean(train2$GrLivArea), sd(train2$GrLivArea)), add = T)
-shapiro.test(train2$GrLivArea)
+numeric_description(train2$GrLivArea, 20)
+# not normal distribution
 analyze_outliers(train2,"GrLivArea")
 train2 <- update_outliers_count(train2, "GrLivArea")
 
@@ -349,11 +322,8 @@ table(train2$GarageCars)
 analyze_outliers(train2, "GarageCars") 
 
 ## "GarageArea" - Size of garage in square feet - continuous ratio variable (continua)
-summary(train2$GarageArea)
-hist(train2$GarageArea, breaks = 30, freq = F)
-curve(dnorm(x, mean(train2$GarageArea), sd(train2$GarageArea)), add = T)
-shapiro.test(train2$GarageArea) # not normally distributed -> p-value = 4.017e-15 
-sum(is.na(train2$GarageArea)) #0
+numeric_description(train2$GarageArea, 30)
+# not normal distribution
 analyze_outliers(train2, "GarageArea")
 train2 <- update_outliers_count(train2, "GarageArea")
 sm<-summary(train2$GarageArea)
@@ -366,12 +336,9 @@ none_area <- which(train$GarageArea == 0);none_area
 none_finish <- which(train$GarageFinish=='No Garage');none_finish
 
 ## "WoodDeckSF" - Wood deck area in square feet - continuous ratio variable
-summary(train2$WoodDeckSF)
+numeric_description(train2$WoodDeckSF, 30)
+# not normal distribution
 table(train2$WoodDeckSF) # centered data in 0
-hist(train2$WoodDeckSF, breaks = 30, freq = F)
-curve(dnorm(x, mean(train2$WoodDeckSF), sd(train2$WoodDeckSF)), add = T)
-shapiro.test(train2$WoodDeckSF) # not normally distributed -> p-value < 2.2e-16
-sum(is.na(train2$WoodDeckSF)) #0
 analyze_outliers(train2, "WoodDeckSF")
 train2 <- update_outliers_count(train2, "WoodDeckSF")
 sm<-summary(train2$WoodDeckSF)
@@ -381,16 +348,15 @@ table(train2$f.WoodDeckSF)
 # LowMidwoodDeckSF 0 ???
 
 ## "OpenPorchSF" - Open porch area in square feet - continuous ratio variable (continua)
+#numeric_description(train2$OpenPorchSF, 30)
+#analyze_outliers(train2,"OpenPorchSF")
+#train2 <- update_outliers_count(train2, "OpenPorchSF")
 summary(train2$OpenPorchSF)
 table(train2$OpenPorchSF) # very centered data in 0
-hist(train2$OpenPorchSF, breaks = 30, freq = F)
-curve(dnorm(x, mean(train2$OpenPorchSF), sd(train2$OpenPorchSF)), add = T)
-shapiro.test(train2$OpenPorchSF) # not normally distributed -> p-value < 2.2e-16
-sum(is.na(train2$OpenPorchSF)) #0
-analyze_outliers(train2,"OpenPorchSF")
-train2 <- update_outliers_count(train2, "OpenPorchSF")
+sum(is.na(train2$OpenPorchSF))
+barplot(table(train2$OpenPorchSF), main = "Distribution of ",xlab = "Number of ",col = "skyblue")
 sm<-summary(train2$OpenPorchSF)
-## faria millor un factor amb tenen porch si/no o bé incluir al d'abaix un q sigui no tenne porch. 
+## faria millor un factor amb tenen porch si/no o bé incluir al d'abaix un q sigui no tenen porch. 
 train2$f.OpenPorchSF <- ifelse(train2$OpenPorchSF <= sm["1st Qu."], 1, ifelse(train2$OpenPorchSF > sm["1st Qu."] & train2$OpenPorchSF < sm["Median"], 2, ifelse(train2$OpenPorchSF >= sm["Median"] & train2$OpenPorchSF <= sm["3rd Qu."], 3, ifelse(train2$OpenPorchSF > sm["3rd Qu."], 4,0))))
 train2$f.OpenPorchSF <- factor(train2$f.OpenPorchSF,labels=c("LowopenPorchSF","LowMidopenPorchSF","HighMidopenPorchSFF","HighopenPorchSF"), order = T, levels=c(1,2,3,4))
 table(train2$f.OpenPorchSF)
@@ -416,40 +382,32 @@ barplot(table(train2$X3SsnPorch), main = "Distribution of ",xlab = "Number of ",
 
 
 ## ScreenPorch - Screen porch area in square feet
-summary(train2$ScreenPorch)
-sum(is.na(train2$ScreenPorch)) #0
+numeric_description(train2$ScreenPorch, 30)
+# not normally distributed
 table(train2$ScreenPorch) # very centered in 0 -> dont have screen porch
-hist(train2$ScreenPorch, breaks = 30, freq = F)
-curve(dnorm(x, mean(train2$ScreenPorch), sd(train2$ScreenPorch)), add = T)
-shapiro.test(train2$ScreenPorch) # not normally distributed -> p-value < 2.2e-16
 analyze_outliers(train2,"ScreenPorch")
+train2 <- update_outliers_count(train2, "ScreenPorch")
 
 ## PoolArea - Pool area in square feet
-summary(train2$PoolArea)
-sum(is.na(train2$PoolArea)) #0
+numeric_description(train2$PoolArea, 30)
+# not normally distributed
 table(train2$PoolArea) # very centered in 0 -> dont have pool
-hist(train2$PoolArea, breaks = 30, freq = F)
-curve(dnorm(x, mean(train2$PoolArea), sd(train2$PoolArea)), add = T)
-shapiro.test(train2$PoolArea) # not normally distributed -> p-value < 2.2e-16
 analyze_outliers(train2,"PoolArea")
+train2 <- update_outliers_count(train2, "PoolArea")
 
 ## MiscVal - $Value of miscellaneous feature
-summary(train2$MiscVal)
-sum(is.na(train2$MiscVal)) #0
+numeric_description(train2$MiscVal, 30)
+# not normally distributed
 table(train2$MiscVal) # very centered in 0 -> dont have pool
-hist(train2$MiscVal, breaks = 30, freq = F)
-curve(dnorm(x, mean(train2$MiscVal), sd(train2$MiscVal)), add = T)
-shapiro.test(train2$MiscVal) # not normally distributed -> p-value < 2.2e-16
 analyze_outliers(train2,"MiscVal")
+train2 <- update_outliers_count(train2, "MiscVal")
 
 ## YrSold - 
-summary(train2$YrSold)
-sum(is.na(train2$YrSold)) #0
+numeric_description(train2$YrSold, 30)
+# not normally distributed
 table(train2$YrSold) 
-hist(train2$YrSold, breaks = 30, freq = F)
-curve(dnorm(x, mean(train2$YrSold), sd(train2$YrSold)), add = T)
-shapiro.test(train2$YrSold) # not normally distributed -> p-value < 2.2e-16
 analyze_outliers(train2,"YrSold")
+train2 <- update_outliers_count(train2, "YrSold")
 
 ## Neighborhood (categorical)
 sum(is.na(train2$Neighborhood)) #0

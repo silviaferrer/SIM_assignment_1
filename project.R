@@ -76,12 +76,14 @@ dim(train2)
 
 ## numeric variable description function
 numeric_description <- function(variable, n_breaks) {
+  column_name <- sub(".+\\$", "", deparse(substitute(variable)))
+  
   cat("Summary:\n")
   print(summary(variable))
 
   cat("\nCount of missing values:",sum(is.na(variable)),"\n")
 
-  hist(variable, breaks = n_breaks, freq = F)
+  hist(variable, breaks = n_breaks, freq = F, main = paste("Histograma de", column_name), xlab = column_name)
   curve(dnorm(x, mean(variable), sd(variable)), add = T)
   
   # Normality test with Shapiro-Wilk

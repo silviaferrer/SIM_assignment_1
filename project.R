@@ -16,7 +16,7 @@ par(mfrow=c(1,1))
 
 # Load data
 #getwd()
-setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/assignment 1")
+setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
 #setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
 
 train<-read.delim("train.csv", sep=',') 
@@ -555,3 +555,12 @@ res.out <- Moutlier(df_of_interest[,c(num_cols)], quantile = 0.9995, col="green"
 cor_matrix <- cor(df_of_interest[, c(num_cols)])
 corrplot(cor_matrix, method = "color")
 # les que queden no tenen tanta correlacio, no se per quina es
+# les seguents mes correlacionades son TotRmsAbvGrd i GrLivArea
+# te sentit perque quantes més habitacions normalment més living area tindrà
+df_of_interest <- imputed_data[, (colnames(imputed_data) != "TotRmsAbvGrd")]
+num_cols <- num_cols[ num_cols != "TotRmsAbvGrd"]
+res.out <- Moutlier(df_of_interest[,c(num_cols)], quantile = 0.9995, col="green")
+cor_matrix <- cor(df_of_interest[, c(num_cols)])
+corrplot(cor_matrix, method = "color")
+
+highly_correlated_pairs <- which(cor_matrix > 0.8 & cor_matrix < 1, arr.ind = TRUE) #empty

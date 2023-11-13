@@ -21,12 +21,14 @@ library(lmtest)
 library(ISLR)
 library(arm)
 library(mice)
+library(corrplot)
+library(dplyr)
 
 rm(list=ls())
 par(mfrow=c(1,1))
 
-setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
-#setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
+#setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
+setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
 
 train<-read.delim("train.csv", sep=',') 
 ```
@@ -82,7 +84,7 @@ shapiro.test(train$SalePrice)  ## Normality test of the target variable  ->>>  #
 qqnorm(train$SalePrice)
 qqline(train$SalePrice)
 hist(train$SalePrice, prob = TRUE, col = 'lightblue', main = 'SalePrice Distribution', xlab = 'SalePrice')
-lines(density(train$SalePrice), col = 'red', lwd = 2)
+#lines(density(train$SalePrice), col = 'red', lwd = 2)
 ```
 
 # Selection of 10 factor variables and numerical variables 
@@ -109,8 +111,8 @@ numeric_description <- function(variable, n_breaks) {
   print(summary(variable))
   
   cat("\nCount of missing values:",sum(is.na(variable)),"\n")
-  
-  hist(variable, breaks = n_breaks, freq = F)
+  column_name <- sub(".+\\$", "", deparse(substitute(variable)))
+  hist(variable, breaks = n_breaks, freq = F, main = paste("Histograma de", column_name), xlab = column_name)
   curve(dnorm(x, mean(variable), sd(variable)), add = T)
   
   # Normality test with Shapiro-Wilk
@@ -509,7 +511,7 @@ table(train2$MSSubClass) # +classes
 skim(train2)
 sum(is.na(train2$LotFrontage))
 sum(is.na(train2$MasVnrArea))
-sum(is.na(train2$GarageYrBlt)) # what do with this ?
+sum(is.na(train2$GarageYrBlt))
 
 ## impute
 # exclude GarageYrBlt feature because it has no sense to impute this variable
@@ -547,42 +549,17 @@ imputed_data[which(imputed_data$univ_outl_count == 9),]
 #corrplot(cor_outl, method = 'number')
 
 raredata<-imputed_data[which(train2$univ_outl_count>2),]
-## fer lo dels NAS!!!
 num_cols <- num_cols[num_cols != "GarageYrBlt"]
-cor_outl <- cor(imputed_data[,c(num_cols)])
-require(corrplot)
-```
-
-# Modelling
-```{r}
-# RSS function
-rss <- function(fitted, actual){
-  sum((fitted - actual)^2)
-}
-## Variables selection
-# example comparison between models
-display(m0 <- lm(SalePrice ~ 1, data = train2))
-display(m1 <- lm(SalePrice ~OverallQual , data = train2))
-summary(m0)
-rss(fitted(m0), train2$SalePrice)
-as.matrix(AIC(m0, m1))
-anova(m0,m1) # per veure quin model és millor
-
-# variable selection all together
-mod.fow <- stats::step(lm(SalePrice ~ ., data = train2), trace = FALSE,
-                       direction = "forward")
-summary(mod.fow)
-
-## selection of the variables: LotArea, OverallQual, OverallCond, MasVnrArea, BsmtFinSF2
-## X1stFlrSF, FullBath, GarageCars, BsmtQualGd
+cor_outl <- cor(imputed_data[,c(num_cols[-1])])
 
 ```
+
 
 # Multivariate outliers
 
 
 ```{r}
-require(chemometrics)
+library(chemometrics)
 num_cols <- num_cols[num_cols != "Id"]
 
 #Some Moutliers:
@@ -638,7 +615,7 @@ abline(v=res.out$cutoff, col="red")
 
 ```
 
-## Profiling
+# Profiling
 To test for autocorrelation the acf() function is used, of which the result can be seen 
 below: target is not normally distributed and autocorrelation is found, so a 
 randomized dataframe is reset
@@ -648,10 +625,8 @@ acf(imputed_data$SalePrice)
 
 #duplicate of the section target exploration
 shapiro.test(imputed_data$SalePrice)  ## Normality test of the target variable  ->>>  # We test the null hypothesis H0: variable is normal, H1: variable not normal.  # The p-value is less than 0.05, therefore we reject H0.  # For that we will not consider the target variable as normally distributed
-qqnorm(imputed_data$SalePrice)
-qqline(imputed_data$SalePrice)
-hist(imputed_data$SalePrice, prob = TRUE, col = 'lightblue', main = 'SalePrice Distribution', xlab = 'SalePrice')
-lines(density(imputed_data$SalePrice), col = 'red', lwd = 2)
+qqnorm(imputed_data$SalePrice) + qqline(imputed_data$SalePrice)
+hist(imputed_data$SalePrice, prob = TRUE, col = 'lightblue', main = 'SalePrice Distribution', xlab = 'SalePrice') + lines(density(imputed_data$SalePrice), col = 'red', lwd = 2)
 
 ggplot(data=imputed_data, aes(SalePrice, y = after_stat(density))) +
   geom_histogram(breaks=seq(0, max(imputed_data$SalePrice), by=5000),
@@ -714,3 +689,32 @@ pairwise.wilcox.test(imputed_data$SalePrice, imputed_data$ExterQual)
 #difference between the means of the different quartiles
 ```
 
+
+# Modelling
+
+
+```{r}
+# RSS function
+rss <- function(fitted, actual){
+  sum((fitted - actual)^2)
+}
+## Variables selection
+# example comparison between models
+
+# variable selection all together
+mod.fow <- stats::step(lm(SalePrice ~ ., data = imputed_data), trace = FALSE,
+                       direction = "forward")
+summary(mod.fow)
+
+display(m0 <- lm(SalePrice ~ 1, data = imputed_data))
+display(m1 <- lm(SalePrice ~OverallQual , data = imputed_data))
+summary(m0)
+rss(fitted(m0), imputed_data$SalePrice)
+as.matrix(AIC(m0, m1))
+anova(m0,m1) # per veure quin model és millor
+
+## selection of the variables: MSSubClass,
+#LotArea, OverallQual, OverallCond, MasVnrArea, BsmtFinSF2
+## X1stFlrSF, X2stFlrSF, FullBath, Fireplaces, GarageCars, BsmtQualGd, 
+
+```

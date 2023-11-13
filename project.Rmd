@@ -580,34 +580,137 @@ summary(mod.fow)
 
 # Multivariate outliers
 
+
 ```{r}
 require(chemometrics)
-#num_cols <- num_cols[num_cols != "GarageYrBlt"]
 num_cols <- num_cols[num_cols != "Id"]
-res.out <- Moutlier(imputed_data[,c(num_cols)], quantile = 0.9995, col="green")
-# da error
-#Esto generalmente significa que hay colinealidad perfecta o casi perfecta entre algunas de las variables en tus datos.
-#La colinealidad perfecta ocurre cuando hay una relación lineal exacta entre dos o más variables, lo que puede causar problemas numéricos durante el cálculo.
-cor_matrix <- cor(imputed_data[, c(num_cols)])
-corrplot(cor_matrix, method = "color")
-# veiem que X1stFlrSF està molt correlacionat amb TotalBsmtSF
-# tambe que GarageArea està correlacionat amb GarageCars
-cols <- c("X1stFlrSF", "GarageArea") #les que menys associació tenen amb la target variable
-df_of_interest <- imputed_data[, !(colnames(imputed_data) %in% cols)]
-num_cols <- num_cols[! num_cols %in% cols ]
-res.out <- Moutlier(df_of_interest[,c(num_cols)], quantile = 0.9995, col="green")
-cor_matrix <- cor(df_of_interest[, c(num_cols)])
-corrplot(cor_matrix, method = "color")
-# les que queden no tenen tanta correlacio, no se per quina es
-# les seguents mes correlacionades son TotRmsAbvGrd i GrLivArea
-# te sentit perque quantes més habitacions normalment més living area tindrà
-df_of_interest <- imputed_data[, (colnames(imputed_data) != "TotRmsAbvGrd")]
-num_cols <- num_cols[ num_cols != "TotRmsAbvGrd"]
-res.out <- Moutlier(df_of_interest[,c(num_cols)], quantile = 0.9995, col="green")
-cor_matrix <- cor(df_of_interest[, c(num_cols)])
+
+#Some Moutliers:
+# 1. first condes quanti variables
+res.con <- condes(imputed_data,35)
+vect<-row.names(res.con$quanti)
+vect[1:10] 
+
+#cols <- c("EnclosedPorch_binary", "EnclosedPorch_binary")
+#n_cols <- num_cols[! num_cols %in% c("EnclosedPorch_binary", "EnclosedPorch_binary") ]
+res.out <- Moutlier(imputed_data[,c(vect[1:3])], quantile = 0.9995, col="green")
+
+cor_matrix <- cor(imputed_data[,c(vect[1:3])])
+highly_correlated_pairs <- which(cor_matrix > 0.8 & cor_matrix < 1, arr.ind = TRUE)
+
 corrplot(cor_matrix, method = "color")
 
-highly_correlated_pairs <- which(cor_matrix > 0.8 & cor_matrix < 1, arr.ind = TRUE) #empty
 
+# 2. Generally the houses built latetly are the ones with most quality
+res.out <- Moutlier(imputed_data[,c("YearBuilt","OverallQual")], quantile = 0.9995, col="green")
+which((res.out$md > res.out$cutoff)&(res.out$rd > res.out$cutoff))
+par(mfrow=c(1,1))
+plot( res.out$md, res.out$rd )
+abline(h=res.out$cutoff, col="red")
+abline(v=res.out$cutoff, col="red")
+
+# 3. Generally the houses with more area are the ones with more rooms
+res.out <- Moutlier(imputed_data[,c("GrLivArea","TotRmsAbvGrd")], quantile = 0.9995, col="green")
+which((res.out$md > res.out$cutoff)&(res.out$rd > res.out$cutoff))
+par(mfrow=c(1,1))
+plot( res.out$md, res.out$rd )
+abline(h=res.out$cutoff, col="red")
+abline(v=res.out$cutoff, col="red")
+
+# 4. Generally the houses with more total area are the ones with more garage area also
+res.out <- Moutlier(imputed_data[,c("GarageArea","TotalBsmtSF")], quantile = 0.9995, col="green")
+which((res.out$md > res.out$cutoff)&(res.out$rd > res.out$cutoff))
+par(mfrow=c(1,1))
+plot( res.out$md, res.out$rd )
+abline(h=res.out$cutoff, col="red")
+abline(v=res.out$cutoff, col="red")
+
+# 5. Moutliers about total areas zones
+res.out <- Moutlier(imputed_data[,c("X1stFlrSF","TotalBsmtSF","GrLivArea")], quantile = 0.9995, col="green") #GarageArea, si se lo sumo hay menos outliers
+which((res.out$md > res.out$cutoff)&(res.out$rd > res.out$cutoff))
+par(mfrow=c(1,1))
+plot( res.out$md, res.out$rd )
+abline(h=res.out$cutoff, col="red")
+abline(v=res.out$cutoff, col="red")
+
+# take off m outliers
+#df = df[-which((res.out$md > res.out$cutoff)&(res.out$rd > res.out$cutoff)),]
+
+```
+
+## Profiling
+To test for autocorrelation the acf() function is used, of which the result can be seen 
+below: target is not normally distributed and autocorrelation is found, so a 
+randomized dataframe is reset
+
+```{r}
+acf(imputed_data$SalePrice)
+
+#duplicate of the section target exploration
+shapiro.test(imputed_data$SalePrice)  ## Normality test of the target variable  ->>>  # We test the null hypothesis H0: variable is normal, H1: variable not normal.  # The p-value is less than 0.05, therefore we reject H0.  # For that we will not consider the target variable as normally distributed
+qqnorm(imputed_data$SalePrice)
+qqline(imputed_data$SalePrice)
+hist(imputed_data$SalePrice, prob = TRUE, col = 'lightblue', main = 'SalePrice Distribution', xlab = 'SalePrice')
+lines(density(imputed_data$SalePrice), col = 'red', lwd = 2)
+
+ggplot(data=imputed_data, aes(SalePrice, y = after_stat(density))) +
+  geom_histogram(breaks=seq(0, max(imputed_data$SalePrice), by=5000),
+                col='lightblue',
+                fill='steelblue') +
+  geom_density(lwd=1,
+                col='red') +
+  labs(title="Histogram for price with density", x="SalePrice", y="Count")
+
+```
+# Variables with most association with the response variable
+
+For the quantitative variables there are some variable that are highly significant positively correlated (r > 0.50, p ~ 0) to the target variable, SalesPrice:  OverallQual, GrLivArea, GarageCars, GarageArea, TotalBsmtSF, X1stFlrSF, FullBath, TotRmsAbvGrd, YearBuilt and YearRemodAdd. This seems logical as the higher the overall condition rating of the house is and the bigger the area above grade living, the more it would cost. There isn't any variable which is highly significant negatively correlated to the SalePrice (r < -0.50 p = 0).
+
+For the qualitative variables it is clear that the Neighborhood explains the most variance in the SalePrice variable (R^2 = 0.546, p ~ 0).  
+The influence of the other qualitative variables (with R^2 > 0.3) are in order: Neighborhood, ExterQual, BsmtQual, KitchenQual, f.GarageArea, GarageFinish. Secondfloor is poorly associated as it has a R^2-value under 2%.
+-- Then, this factor we have created, we can exclude it.
+
+```{r}
+require(FactoMineR)
+## Loading required package: FactoMineR
+require(corrplot)
+res.con <- condes(imputed_data,35) #names(imputed_data)[35] - [1] "SalePrice"
+res.con$quanti
+
+#done before for selecting
+res.con$quali
+
+
+```
+
+## Define a polytomic factor ExterQual, evaluates the quality of the material on the exterior, and argue if the average price depends on the level of ExterQual
+
+Define a polytomic factor f.age for the covariate car age according to its quartiles and argue if the average price depends on the level of age. Statistically justify the answer
+
+Given the evidence below, we argue that the price is dependent on the level of ExterQual. Firstly, in the boxplots it can be observed that the better the quality (Q1) the lower the average of the house sale price. This is also seen clearly in the distribution plot below. 
+---Secondly, the wilcoxon test shows that the means of these levels are not equal meaning that some relation exists between the factor and the response variable
+
+```{r}
+ggplot(imputed_data, aes(x=SalePrice, fill=ExterQual)) +
+ geom_density(alpha=.5)
+
+ggplot(imputed_data, aes(y=SalePrice, fill=ExterQual)) +
+ geom_boxplot(alpha=0.5)
+
+
+```
+
+```{r}
+pairwise.wilcox.test(imputed_data$SalePrice, imputed_data$ExterQual)
+
+## LowAge LowMidAge HighMidAge
+## LowMidAge <2e-16 - - 
+## HighMidAge <2e-16 <2e-16 - 
+## HighAge <2e-16 <2e-16 <2e-16
+
+#We perform pairwise wilcoxon test to check for similar means. Looking at the boxplot 
+#and distribution plot we can already expect that these are not going to be similar. The 
+#result of the wilcoxon test indicates our hypothesis was right that there is a clear 
+#difference between the means of the different quartiles
 ```
 

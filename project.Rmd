@@ -27,8 +27,8 @@ library(dplyr)
 rm(list=ls())
 par(mfrow=c(1,1))
 
-#setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
-setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
+setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
+#setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
 
 train<-read.delim("train.csv", sep=',') 
 ```
@@ -570,12 +570,12 @@ vect[1:10]
 
 #cols <- c("EnclosedPorch_binary", "EnclosedPorch_binary")
 #n_cols <- num_cols[! num_cols %in% c("EnclosedPorch_binary", "EnclosedPorch_binary") ]
-res.out <- Moutlier(imputed_data[,c(vect[1:3])], quantile = 0.9995, col="green")
+#res.out <- Moutlier(imputed_data[,c(vect[1:3])], quantile = 0.9995, col="green")
 
-cor_matrix <- cor(imputed_data[,c(vect[1:3])])
-highly_correlated_pairs <- which(cor_matrix > 0.8 & cor_matrix < 1, arr.ind = TRUE)
+#cor_matrix <- cor(imputed_data[,c(vect[1:3])])
+#highly_correlated_pairs <- which(cor_matrix > 0.8 & cor_matrix < 1, arr.ind = TRUE)
 
-corrplot(cor_matrix, method = "color")
+#corrplot(cor_matrix, method = "color")
 
 
 # 2. Generally the houses built latetly are the ones with most quality
@@ -616,17 +616,18 @@ abline(v=res.out$cutoff, col="red")
 ```
 
 # Profiling
-To test for autocorrelation the acf() function is used, of which the result can be seen 
-below: target is not normally distributed and autocorrelation is found, so a 
-randomized dataframe is reset
+To test for autocorrelation the acf() function is used, of which the result can be seen below: target is not normally distributed and autocorrelation is found, so a randomized dataframe is reset
 
 ```{r}
 acf(imputed_data$SalePrice)
 
 #duplicate of the section target exploration
 shapiro.test(imputed_data$SalePrice)  ## Normality test of the target variable  ->>>  # We test the null hypothesis H0: variable is normal, H1: variable not normal.  # The p-value is less than 0.05, therefore we reject H0.  # For that we will not consider the target variable as normally distributed
-qqnorm(imputed_data$SalePrice) + qqline(imputed_data$SalePrice)
-hist(imputed_data$SalePrice, prob = TRUE, col = 'lightblue', main = 'SalePrice Distribution', xlab = 'SalePrice') + lines(density(imputed_data$SalePrice), col = 'red', lwd = 2)
+
+ks.test(imputed_data$SalePrice, 'pnorm', mean(imputed_data$SalePrice), sd(imputed_data$SalePrice))
+
+#qqnorm(imputed_data$SalePrice) + qqline(imputed_data$SalePrice)
+#hist(imputed_data$SalePrice, prob = TRUE, col = 'lightblue', main = 'SalePrice Distribution', xlab = 'SalePrice') + lines(density(imputed_data$SalePrice), col = 'red', lwd = 2)
 
 ggplot(data=imputed_data, aes(SalePrice, y = after_stat(density))) +
   geom_histogram(breaks=seq(0, max(imputed_data$SalePrice), by=5000),
@@ -642,8 +643,7 @@ ggplot(data=imputed_data, aes(SalePrice, y = after_stat(density))) +
 For the quantitative variables there are some variable that are highly significant positively correlated (r > 0.50, p ~ 0) to the target variable, SalesPrice:  OverallQual, GrLivArea, GarageCars, GarageArea, TotalBsmtSF, X1stFlrSF, FullBath, TotRmsAbvGrd, YearBuilt and YearRemodAdd. This seems logical as the higher the overall condition rating of the house is and the bigger the area above grade living, the more it would cost. There isn't any variable which is highly significant negatively correlated to the SalePrice (r < -0.50 p = 0).
 
 For the qualitative variables it is clear that the Neighborhood explains the most variance in the SalePrice variable (R^2 = 0.546, p ~ 0).  
-The influence of the other qualitative variables (with R^2 > 0.3) are in order: Neighborhood, ExterQual, BsmtQual, KitchenQual, f.GarageArea, GarageFinish. Secondfloor is poorly associated as it has a R^2-value under 2%.
--- Then, this factor we have created, we can exclude it.
+The influence of the other qualitative variables (with R^2 > 0.3) are in order: Neighborhood, ExterQual, BsmtQual, KitchenQual, f.GarageArea, GarageFinish. EnclosedPorch_binary, Secondfloor and Pool_binary are poorly associated as they have a R^2-value under 4%.
 
 ```{r}
 require(FactoMineR)
@@ -654,7 +654,6 @@ res.con$quanti
 
 #done before for selecting
 res.con$quali
-
 
 ```
 
@@ -674,6 +673,10 @@ ggplot(imputed_data, aes(y=SalePrice, fill=ExterQual)) +
 
 
 ```
+We perform pairwise wilcoxon test to check for similar means. Looking at the boxplot 
+and distribution plot we can already expect that these are not going to be similar. The 
+result of the wilcoxon test indicates our hypothesis was right that there is a clear 
+difference between the means of the different quartiles
 
 ```{r}
 pairwise.wilcox.test(imputed_data$SalePrice, imputed_data$ExterQual)

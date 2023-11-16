@@ -411,7 +411,7 @@ hist(train2$EnclosedPorch, breaks = 30, freq = F)
 # therefore we will create a factor 0 if they dont have enclosed porch area,1 if they do have.
 train2$EnclosedPorch_binary<-0
 train2$EnclosedPorch_binary[which(train2$EnclosedPorch!=0)]<-1
-train2$EnclosedPorch_binary
+train2$EnclosedPorch_binary<-as.factor(train2$EnclosedPorch_binary)
 table(train2$EnclosedPorch_binary)
 
 ## X3SsnPorch - Three season porch area in square feet (cont)
@@ -437,7 +437,7 @@ train2 <- update_outliers_count(train2, "PoolArea")
 # create a new variable : 0=no pool/1= pool
 train2$Pool_binary<-0
 train2$Pool_binary[which(train2$PoolArea!=0)]<-1
-train2$Pool_binary
+train2$Pool_binary<-as.factor(train2$Pool_binary)
 table(train2$Pool_binary) # not very usefull , the majority dont have pools
 
 ## MiscVal - $Value of miscellaneous feature (cont)
@@ -692,29 +692,53 @@ pairwise.wilcox.test(imputed_data$SalePrice, imputed_data$ExterQual)
 
 # Modelling
 
+```{r}
+
+```
+
+
 
 ```{r}
 # RSS function
 rss <- function(fitted, actual){
   sum((fitted - actual)^2)
 }
-## Variables selection
-# example comparison between models
+## Numeric Variable selection
 
-# variable selection all together
-mod.fow <- stats::step(lm(SalePrice ~ ., data = imputed_data), trace = FALSE,
+formula <- SalePrice ~ LotFrontage + LotArea + OverallQual + OverallCond + YearBuilt +
+            YearRemodAdd + MasVnrArea + BsmtFinSF1 + BsmtFinSF2 + BsmtUnfSF +
+            TotalBsmtSF + X1stFlrSF + X2ndFlrSF + LowQualFinSF + GrLivArea +
+            BsmtFullBath + BsmtHalfBath + FullBath + HalfBath + BedroomAbvGr +
+            KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + GarageArea +
+            WoodDeckSF + OpenPorchSF + EnclosedPorch + X3SsnPorch + ScreenPorch +
+            PoolArea + MiscVal + YrSold
+
+mod.fow <- stats::step(lm(formula, data = imputed_data), trace = FALSE,
                        direction = "forward")
 summary(mod.fow)
 
 display(m0 <- lm(SalePrice ~ 1, data = imputed_data))
-display(m1 <- lm(SalePrice ~OverallQual , data = imputed_data))
-summary(m0)
-rss(fitted(m0), imputed_data$SalePrice)
+display(m1 <- lm(SalePrice ~LotArea , data = imputed_data))
+anova(m0,m1) # rss
 as.matrix(AIC(m0, m1))
-anova(m0,m1) # per veure quin model és millor
 
-## selection of the variables: MSSubClass,
-#LotArea, OverallQual, OverallCond, MasVnrArea, BsmtFinSF2
-## X1stFlrSF, X2stFlrSF, FullBath, Fireplaces, GarageCars, BsmtQualGd, 
+display(m2 <- lm(SalePrice ~ LotArea+ OverallQual , data = imputed_data))
+anova(m1,m2)
+as.matrix(AIC(m1, m2))
+display(m3 <- lm(SalePrice ~LotArea+ OverallQual+OverallCond , data = imputed_data))
+anova(m2,m3)
+as.matrix(AIC(m2, m3))
+# afegir OverallCond no millora significativament -> ens quedem amb el model més senzill.
+
+display(m4<- lm(SalePrice ~LotArea+ OverallQual+BsmtFinSF1 , data = imputed_data))
+anova(m2,m4)
+as.matrix(AIC(m2, m4)) # rss si millora, aic no. 
+
+display(m5<- lm(SalePrice ~LotArea+ OverallQual+BsmtFinSF1+ BsmtFinSF2  , data = imputed_data))
+anova(m4,m5) # no milllora model
+as.matrix(AIC(m4, m5)) # no
+
+
+
 
 ```

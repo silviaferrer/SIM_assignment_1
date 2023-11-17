@@ -453,19 +453,30 @@ numeric_description(train2$YrSold, 30)
 table(train2$YrSold) 
 analyze_outliers(train2,"YrSold")
 train2 <- update_outliers_count(train2, "YrSold")
+```
 
+
+
+```{r}
 ### categorical variables
 
 ## Neighborhood 
 sum(is.na(train2$Neighborhood)) #0
 table(train2$Neighborhood)
 barplot(table(train2$Neighborhood), main = "Distribution of Neighborhood",xlab = "Number of Neighborhood",col = "skyblue")
-#pie(table(train2$Neighborhood), main = "Distribution of Neighborhood", col = rainbow(length(levels(train2$Neighborhood))))
+pie(table(train2$Neighborhood), main = "Distribution of Neighborhood", col = rainbow(length(levels(train2$Neighborhood))))
+
 
 ## ExterQual - Evaluates the quality of the material on the exterior 
 sum(is.na(train2$ExterQual)) #0
 table(train2$ExterQual)
 barplot(table(train2$ExterQual), main = "Distribution of the exterior material quality",xlab = "Qualification",col = "skyblue")
+
+ggplot(train2, aes(x=SalePrice, fill=ExterQual)) +
+ geom_density(alpha=.5)
+ggplot(train2, aes(y=SalePrice, fill=ExterQual)) +
+ geom_boxplot(alpha=0.5)
+pairwise.wilcox.test(train2$SalePrice, train2$ExterQual)
 
 ## BsmtQual - Evaluates the height of the basement
 sum(is.na(train2$BsmtQual)) #0
@@ -473,20 +484,50 @@ table(train2$BsmtQual)
 barplot(table(train2$BsmtQual), main = "Distribution of Basement height Quality",xlab = "Qualification",col = "skyblue")
 #pie(table(train2$BsmtQual), main = "Distribution of BsmtQual", col = rainbow(length(levels(train2$BsmtQual))))
 
+ggplot(train2, aes(x=SalePrice, fill=BsmtQual)) +
+ geom_density(alpha=.5)
+ggplot(train2, aes(y=SalePrice, fill=BsmtQual)) +
+ geom_boxplot(alpha=0.5)
+pairwise.wilcox.test(train2$SalePrice, train2$BsmtQual)
+
+
 ## KitchenQual - Kitchen quality
 sum(is.na(train2$KitchenQual)) #0
 table(train2$KitchenQual)
 barplot(table(train2$KitchenQual), main = "Distribution of Kitchen Quality",xlab = "Qualification",col = "skyblue")
+ggplot(train2, aes(x=SalePrice, fill=KitchenQual)) +
+ geom_density(alpha=.5)
+ggplot(train2, aes(y=SalePrice, fill=KitchenQual)) +
+ geom_boxplot(alpha=0.5)
+pairwise.wilcox.test(train2$SalePrice, train2$KitchenQual)
+
+ks.test(train2$SalePrice[train2$KitchenQual=="TA"],train2$SalePrice[train2$KitchenQual=="Fa"]) # reject
+
+
 
 ## GarageFinish - Interior finish of the garage
 sum(is.na(train2$GarageFinish)) #0
 table(train2$GarageFinish)
 barplot(table(train2$GarageFinish), main = "Garage Finish Distribution",xlab = "Type",col = "skyblue")
 
+ggplot(train2, aes(x=SalePrice, fill=GarageFinish)) +
+ geom_density(alpha=.5)
+ggplot(train2, aes(y=SalePrice, fill=GarageFinish)) +
+ geom_boxplot(alpha=0.5)
+pairwise.wilcox.test(train2$SalePrice, train2$GarageFinish)
+
+
 ## FireplaceQu - Fireplace quality
 sum(is.na(train2$FireplaceQu)) #0
 table(train2$FireplaceQu)
 barplot(table(train2$FireplaceQu), main = "Fireplace quality Distribution",xlab = "Qualification",col = "skyblue")
+
+
+ggplot(train2, aes(x=SalePrice, fill=FireplaceQu)) +
+ geom_density(alpha=.5)
+ggplot(train2, aes(y=SalePrice, fill=FireplaceQu)) +
+ geom_boxplot(alpha=0.5)
+pairwise.wilcox.test(train2$SalePrice, train2$FireplaceQu)
 
 ## Foundation - Type of foundation
 sum(is.na(train2$Foundation)) #0
@@ -692,20 +733,102 @@ pairwise.wilcox.test(imputed_data$SalePrice, imputed_data$ExterQual)
 #difference between the means of the different quartiles
 ```
 
+## Modeling
+
 
 # Modelling
 
 ```{r}
+nearZeroVar(imputed_data, saveMetrics= TRUE)
+nzv <- nearZeroVar(imputed_data)
+nzv
+prdata<-imputed_data[,-nzv]
+```
+
+We start by building the model with a manual stepwise technique, we will check the R^2 and AIC metrics to select the better model. 
+We can compare with automatic forward stepwise of the function step()
+```{r}
+# We start with the constant and adding each chunk a variable
+display(m0 <- lm(log(SalePrice) ~ 1, data = imputed_data))
+display(m1 <- lm(log(SalePrice) ~LotArea , data = imputed_data))
+anova(m0,m1) # rss
+as.matrix(AIC(m0, m1)) 
+
+display(m2 <- lm(log(SalePrice) ~ LotArea+ OverallQual , data = imputed_data))
+anova(m1,m2)
+as.matrix(AIC(m1, m2))
+
+display(m3 <- lm(log(SalePrice) ~LotArea+ OverallQual+OverallCond , data = imputed_data))
+anova(m2,m3) # no millora r^2
+as.matrix(AIC(m2, m3)) 
+
+display(m4 <- lm(log(SalePrice)~LotArea+ OverallQual+YearBuilt , data = imputed_data))
+anova(m2,m4) ## seems to improve the RSS but not the R^2, 
+as.matrix(AIC(m2, m4))
+
+display(m5<- lm(log(SalePrice) ~LotArea+ OverallQual+YearBuilt +YearRemodAdd , data = imputed_data))
+anova(m4,m5)
+summary(m5) ## seems to improve RSS but not R^2
+as.matrix(AIC(m4, m5)) 
+
+display(m6<- lm(log(SalePrice)~LotArea+ OverallQual+ YearBuilt +YearRemodAdd+MasVnrArea , data = imputed_data))
+anova(m5,m6) 
+as.matrix(AIC(m5, m6)) 
+
+display(m7<- lm(log(SalePrice) ~LotArea+ OverallQual+ YearBuilt +YearRemodAdd+MasVnrArea+BsmtFinSF1 , data = imputed_data))
+anova(m6,m7) 
+as.matrix(AIC(m6, m7)) 
+
+
+display(m8<- lm(log(SalePrice) ~LotArea+ OverallQual+ YearBuilt +YearRemodAdd+MasVnrArea+BsmtFinSF1+BsmtUnfSF , data = imputed_data))
+anova(m7,m8) # seems to improve RSS but not R^2
+as.matrix(AIC(m7, m8)) 
+
+display(m9<- lm(log(SalePrice) ~LotArea+ OverallQual+ YearBuilt +YearRemodAdd+MasVnrArea+BsmtFinSF1+BsmtUnfSF +X1stFlrSF, data = imputed_data))
+anova(m8,m9) 
+summary(m8)
+as.matrix(AIC(m8, m9)) 
+
+display(m10<- lm(log(SalePrice) ~LotArea+ OverallQual+ YearBuilt +YearRemodAdd+MasVnrArea+BsmtFinSF1+BsmtUnfSF +X1stFlrSF+X2ndFlrSF, data = imputed_data))
+anova(m9,m10) 
+summary(m10)
+as.matrix(AIC(m9, m10)) 
+
+display(m11<- lm(log(SalePrice) ~LotArea+ OverallQual+ YearBuilt +YearRemodAdd+MasVnrArea+BsmtFinSF1+BsmtUnfSF+X1stFlrSF+X2ndFlrSF+LowQualFinSF, data = imputed_data))
+anova(m10,m11) 
+summary(m11)
+as.matrix(AIC(m10, m11))  # not much better
+
+
+display(m12<- lm(SalePrice ~LotArea+ OverallQual+ YearBuilt +YearRemodAdd+MasVnrArea+BsmtFinSF1+BsmtUnfSF +X1stFlrSF+X2ndFlrSF+BsmtFullBath, data = imputed_data))
+anova(m10,m12) 
+summary(m12) # r^2 not better
+as.matrix(AIC(m10, m12)) 
+
+
+display(m13<- lm(log(SalePrice )~LotArea+ OverallQual+ YearBuilt +YearRemodAdd+MasVnrArea+BsmtFinSF1+BsmtUnfSF +X1stFlrSF+X2ndFlrSF+BedroomAbvGr, data = imputed_data))
+anova(m10,m13) 
+summary(m13) # not better 
+as.matrix(AIC(m10, m13))
+
+display(m14<- lm(log(SalePrice) ~LotArea+ OverallQual+ YearBuilt +YearRemodAdd+MasVnrArea+BsmtFinSF1+BsmtUnfSF +X1stFlrSF+X2ndFlrSF+KitchenAbvGr+GarageCars, data = imputed_data))
+anova(m13,m14) 
+summary(m14)
+as.matrix(AIC(m13, m14))
+
+
+# Area variable to logaritmic scale
+display(m15<- lm(log(SalePrice) ~LotArea+ OverallQual+ YearBuilt +YearRemodAdd+MasVnrArea+BsmtFinSF1+BsmtUnfSF +X1stFlrSF+X2ndFlrSF+KitchenAbvGr+GarageCars, data = imputed_data))
+anova(m14,m15) 
+summary(m15) 
+as.matrix(AIC(m14, m15))
+
+
 
 ```
 
-
-
+Automatic stepwise()
 ```{r}
-# RSS function
-rss <- function(fitted, actual){
-  sum((fitted - actual)^2)
-}
 ## Numeric Variable selection
 
 formula <- SalePrice ~ LotFrontage + LotArea + OverallQual + OverallCond + YearBuilt +
@@ -716,32 +839,142 @@ formula <- SalePrice ~ LotFrontage + LotArea + OverallQual + OverallCond + YearB
             WoodDeckSF + OpenPorchSF + EnclosedPorch + X3SsnPorch + ScreenPorch +
             PoolArea + MiscVal + YrSold
 
-mod.fow <- stats::step(lm(formula, data = imputed_data), trace = FALSE,
+mod.fow <- stats::step(lm(SalePrice~. , data = imputed_data), trace = FALSE,
                        direction = "forward")
 summary(mod.fow)
 
-display(m0 <- lm(SalePrice ~ 1, data = imputed_data))
-display(m1 <- lm(SalePrice ~LotArea , data = imputed_data))
-anova(m0,m1) # rss
-as.matrix(AIC(m0, m1))
-
-display(m2 <- lm(SalePrice ~ LotArea+ OverallQual , data = imputed_data))
-anova(m1,m2)
-as.matrix(AIC(m1, m2))
-display(m3 <- lm(SalePrice ~LotArea+ OverallQual+OverallCond , data = imputed_data))
-anova(m2,m3)
-as.matrix(AIC(m2, m3))
-# afegir OverallCond no millora significativament -> ens quedem amb el model més senzill.
-
-display(m4<- lm(SalePrice ~LotArea+ OverallQual+BsmtFinSF1 , data = imputed_data))
-anova(m2,m4)
-as.matrix(AIC(m2, m4)) # rss si millora, aic no. 
-
-display(m5<- lm(SalePrice ~LotArea+ OverallQual+BsmtFinSF1+ BsmtFinSF2  , data = imputed_data))
-anova(m4,m5) # no milllora model
-as.matrix(AIC(m4, m5)) # no
+mod.fow <- stats::step(lm(SalePrice~. , data = prdata), trace = FALSE,
+                       direction = "forward")
+summary(mod.fow)
 
 
+display(n00<- lm(SalePrice ~ LotArea + OverallQual + OverallCond + YearBuilt +
+            MasVnrArea + BsmtFinSF1 + BsmtFinSF2 + BsmtUnfSF +
+            X1stFlrSF + X2ndFlrSF  +
+            BsmtFullBath + FullBath + HalfBath + BedroomAbvGr +
+            KitchenAbvGr + Fireplaces + GarageCars  +
+            OpenPorchSF + X3SsnPorch + ScreenPorch +
+            PoolArea, data = imputed_data))
+
+# logaritmic scale: 
+display(n0<- lm(log(SalePrice) ~ log(LotArea) + OverallQual + OverallCond + YearBuilt +
+            MasVnrArea + BsmtFinSF1 + BsmtFinSF2 + BsmtUnfSF +
+            X1stFlrSF + X2ndFlrSF  +
+            BsmtFullBath + FullBath + HalfBath + BedroomAbvGr +
+            KitchenAbvGr + Fireplaces + GarageCars  +
+            OpenPorchSF + X3SsnPorch + ScreenPorch +
+            PoolArea, data = imputed_data))
 
 
+display(n02<- lm(log(SalePrice) ~ log(LotArea) + OverallQual + OverallCond + YearBuilt +
+            MasVnrArea + BsmtFinSF1   +
+            X1stFlrSF + X2ndFlrSF  +
+            BsmtFullBath + FullBath  + BedroomAbvGr +
+            KitchenAbvGr + Fireplaces + GarageCars  +
+            OpenPorchSF + X3SsnPorch + ScreenPorch +
+            PoolArea, data = imputed_data))
+
+
+```
+
+
+
+```{r}
+# factor
+#mod.fow <- stats::step(lm(SalePrice~. , data = imputed_data), trace = FALSE,
+#                       direction = "forward")
+#summary(mod.fow)
+
+
+display(n00<- lm((SalePrice) ~ LotArea + OverallQual + OverallCond + YearBuilt +
+            MasVnrArea + BsmtFinSF1 + BsmtFinSF2 + BsmtUnfSF +
+            X1stFlrSF + X2ndFlrSF  +
+            BsmtFullBath + FullBath + HalfBath + BedroomAbvGr +
+            KitchenAbvGr + Fireplaces + GarageCars  +
+            OpenPorchSF + X3SsnPorch + ScreenPorch +
+            PoolArea, data = imputed_data))
+
+display(n0<- lm(log(SalePrice) ~ log(LotArea) + OverallQual + OverallCond + YearBuilt +
+            MasVnrArea + BsmtFinSF1 + BsmtFinSF2 + BsmtUnfSF +
+            X1stFlrSF + X2ndFlrSF  +
+            BsmtFullBath + FullBath + HalfBath + BedroomAbvGr +
+            KitchenAbvGr + Fireplaces + GarageCars  +
+            OpenPorchSF + X3SsnPorch + ScreenPorch +
+            PoolArea, data = imputed_data))
+
+
+
+display(n0<- lm(log(SalePrice) ~ log(LotArea) + OverallQual + OverallCond + YearBuilt +
+            MasVnrArea + BsmtFinSF1 + BsmtFinSF2 + BsmtUnfSF +
+            X1stFlrSF + X2ndFlrSF  +
+            BsmtFullBath + FullBath + HalfBath + BedroomAbvGr +
+            KitchenAbvGr + Fireplaces + GarageCars, data = imputed_data))
+
+display(n1<- lm(log(SalePrice) ~ log(LotArea) + OverallQual + OverallCond + YearBuilt +
+            MasVnrArea + BsmtFinSF1 + BsmtFinSF2 + BsmtUnfSF +
+            X1stFlrSF + X2ndFlrSF  +
+            BsmtFullBath + FullBath + HalfBath + BedroomAbvGr +
+            KitchenAbvGr + Fireplaces + GarageCars  +
+            OpenPorchSF + X3SsnPorch + ScreenPorch +
+            PoolArea+ Neighborhood, data = imputed_data))
+
+anova(n0,n1) # rss #####
+as.matrix(AIC(n0, n1))
+
+display(n2 <- lm(SalePrice ~ LotArea + OverallQual + OverallCond + YearBuilt +
+            MasVnrArea + BsmtFinSF1 + BsmtFinSF2 + BsmtUnfSF +
+            X1stFlrSF + X2ndFlrSF  +
+            BsmtFullBath + FullBath + HalfBath + BedroomAbvGr +
+            KitchenAbvGr + Fireplaces + GarageCars  +
+            OpenPorchSF + X3SsnPorch + ScreenPorch +
+            PoolArea + Neighborhood +ExterQual, data = imputed_data))
+anova(n1,n2) # rss
+as.matrix(AIC(n1, n2))
+
+display(n3 <- lm(SalePrice ~ LotArea + OverallQual + OverallCond + YearBuilt +
+            MasVnrArea + BsmtFinSF1 + BsmtFinSF2 + BsmtUnfSF +
+            X1stFlrSF + X2ndFlrSF  +
+            BsmtFullBath + FullBath + HalfBath + BedroomAbvGr +
+            KitchenAbvGr + Fireplaces + GarageCars  +
+            OpenPorchSF + X3SsnPorch + ScreenPorch +
+            PoolArea + Neighborhood +ExterQual+MSSubClass, data = imputed_data))
+anova(n2,n3) # rss
+as.matrix(AIC(n2, n3))
+
+display(n3 <- lm(SalePrice ~ LotArea + OverallQual + OverallCond + YearBuilt +
+            MasVnrArea + BsmtFinSF1 + BsmtFinSF2 + BsmtUnfSF +
+            X1stFlrSF + X2ndFlrSF  +
+            BsmtFullBath + FullBath + HalfBath + BedroomAbvGr +
+            KitchenAbvGr + Fireplaces + GarageCars  +
+            OpenPorchSF + X3SsnPorch + ScreenPorch +
+            PoolArea + Neighborhood +ExterQual+MSSubClass, data = imputed_data))
+anova(n2,n3) # rss
+as.matrix(AIC(n2, n3))
+
+
+```
+
+
+
+# Factor variables
+```{r}
+# Neighborhood
+
+ggplot(imputed_data, aes(x=SalePrice, fill=Neighborhood)) +
+ geom_density(alpha=.5)
+
+ggplot(imputed_data, aes(y=SalePrice, fill=Neighborhood)) +
+ geom_boxplot(alpha=0.5)
+
+pairwise.wilcox.test(imputed_data$SalePrice, imputed_data$Neighborhood)
+
+```
+
+
+```{r}
+ggplot(train2, aes(x=SalePrice, fill=Neighborhood)) +
+ geom_density(alpha=.5)
+ggplot(train2, aes(y=SalePrice, fill=Neighborhood)) +
+ geom_boxplot(alpha=0.5)
+pairwise.wilcox.test(train2$SalePrice, train2$Neighborhood)
 ```

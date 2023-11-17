@@ -369,9 +369,9 @@ numeric_description(train2$GarageArea, 30)
 analyze_outliers(train2, "GarageArea")
 train2 <- update_outliers_count(train2, "GarageArea")
 sm<-summary(train2$GarageArea)
-train2$f.GarageArea <- ifelse(train2$GarageArea <= sm["1st Qu."], 1, ifelse(train2$GarageArea > sm["1st Qu."] & train2$GarageArea < sm["Median"], 2, ifelse(train2$GarageArea >= sm["Median"] & train2$GarageArea <= sm["3rd Qu."], 3, ifelse(train2$GarageArea > sm["3rd Qu."], 4,0))))
-train2$f.GarageArea <- factor(train2$f.GarageArea,labels=c("LowgarageArea","LowMidgarageArea","HighMidgarageArea","HighgarageArea"), order = T, levels=c(1,2,3,4))
-table(train2$f.GarageArea)
+#train2$f.GarageArea <- ifelse(train2$GarageArea <= sm["1st Qu."], 1, ifelse(train2$GarageArea > sm["1st Qu."] & train2$GarageArea < sm["Median"], 2, ifelse(train2$GarageArea >= sm["Median"] & train2$GarageArea <= sm["3rd Qu."], 3, ifelse(train2$GarageArea > sm["3rd Qu."], 4,0))))
+#train2$f.GarageArea <- factor(train2$f.GarageArea,labels=c("LowgarageArea","LowMidgarageArea","HighMidgarageArea","HighgarageArea"), order = T, levels=c(1,2,3,4))
+#table(train2$f.GarageArea)
 #checking si los 0 significan que no tienen garage
 none_cars <- which(train$GarageCars == 0);none_cars
 none_area <- which(train$GarageArea == 0);none_area
@@ -384,9 +384,9 @@ table(train2$WoodDeckSF) # centered data in 0
 analyze_outliers(train2, "WoodDeckSF")
 train2 <- update_outliers_count(train2, "WoodDeckSF")
 sm<-summary(train2$WoodDeckSF)
-train2$f.WoodDeckSF <- ifelse(train2$WoodDeckSF <= sm["1st Qu."], 1, ifelse(train2$WoodDeckSF > sm["1st Qu."] & train2$WoodDeckSF < sm["Median"], 2, ifelse(train2$WoodDeckSF >= sm["Median"] & train2$WoodDeckSF <= sm["3rd Qu."], 3, ifelse(train2$WoodDeckSF > sm["3rd Qu."], 4,0))))
-train2$f.WoodDeckSF <- factor(train2$f.WoodDeckSF,labels=c("LowwoodDeckSF","LowMidwoodDeckSF","HighMidwoodDeckSF","HighwoodDeckSF"), order = T, levels=c(1,2,3,4))
-table(train2$f.WoodDeckSF)
+#train2$f.WoodDeckSF <- ifelse(train2$WoodDeckSF <= sm["1st Qu."], 1, ifelse(train2$WoodDeckSF > sm["1st Qu."] & train2$WoodDeckSF < sm["Median"], 2, ifelse(train2$WoodDeckSF >= sm["Median"] & train2$WoodDeckSF <= sm["3rd Qu."], 3, ifelse(train2$WoodDeckSF > sm["3rd Qu."], 4,0))))
+#train2$f.WoodDeckSF <- factor(train2$f.WoodDeckSF,labels=c("LowwoodDeckSF","LowMidwoodDeckSF","HighMidwoodDeckSF","HighwoodDeckSF"), order = T, levels=c(1,2,3,4))
+#table(train2$f.WoodDeckSF)
 # LowMidwoodDeckSF 0 ???
 
 ## "OpenPorchSF" - Open porch area in square feet - continuous ratio variable (continua)
@@ -398,10 +398,15 @@ table(train2$OpenPorchSF) # very centered data in 0
 sum(is.na(train2$OpenPorchSF))
 barplot(table(train2$OpenPorchSF), main = "Distribution of ",xlab = "Number of ",col = "skyblue")
 sm<-summary(train2$OpenPorchSF)
-## faria millor un factor amb tenen porch si/no o bé incluir al d'abaix un q sigui no tenen porch. 
-train2$f.OpenPorchSF <- ifelse(train2$OpenPorchSF <= sm["1st Qu."], 1, ifelse(train2$OpenPorchSF > sm["1st Qu."] & train2$OpenPorchSF < sm["Median"], 2, ifelse(train2$OpenPorchSF >= sm["Median"] & train2$OpenPorchSF <= sm["3rd Qu."], 3, ifelse(train2$OpenPorchSF > sm["3rd Qu."], 4,0))))
-train2$f.OpenPorchSF <- factor(train2$f.OpenPorchSF,labels=c("LowopenPorchSF","LowMidopenPorchSF","HighMidopenPorchSFF","HighopenPorchSF"), order = T, levels=c(1,2,3,4))
-table(train2$f.OpenPorchSF)
+## faria millor un factor amb tenen porch si/no o bé incluir al d'abaix un q sigui no tenen porch.
+train2$OpenPorch_binary<-0
+train2$OpenPorch_binary[which(train2$OpenPorchSF!=0)]<-1
+train2$OpenPorch_binary<-as.factor(train2$OpenPorch_binary)
+table(train2$OpenPorch_binary)
+
+#train2$f.OpenPorchSF <- ifelse(train2$OpenPorchSF <= sm["1st Qu."], 1, ifelse(train2$OpenPorchSF > sm["1st Qu."] & train2$OpenPorchSF < sm["Median"], 2, ifelse(train2$OpenPorchSF >= sm["Median"] & train2$OpenPorchSF <= sm["3rd Qu."], 3, ifelse(train2$OpenPorchSF > sm["3rd Qu."], 4,0))))
+#train2$f.OpenPorchSF <- factor(train2$f.OpenPorchSF,labels=c("LowopenPorchSF","LowMidopenPorchSF","HighMidopenPorchSFF","HighopenPorchSF"), order = T, levels=c(1,2,3,4))
+#table(train2$f.OpenPorchSF)
 
 ## EnclosedPorch - Enclosed porch area in square feet (cont)
 summary(train2$EnclosedPorch)
@@ -413,6 +418,12 @@ train2$EnclosedPorch_binary<-0
 train2$EnclosedPorch_binary[which(train2$EnclosedPorch!=0)]<-1
 train2$EnclosedPorch_binary<-as.factor(train2$EnclosedPorch_binary)
 table(train2$EnclosedPorch_binary)
+
+# create new variable - has porch or not - mixing both binary variables
+train2$HasPorch_binary<-0
+train2$HasPorch_binary[which(train2$EnclosedPorch!=0 | train2$OpenPorchSF!=0)]<-1
+train2$HasPorch_binary<-as.factor(train2$HasPorch_binary)
+table(train2$HasPorch_binary)
 
 ## X3SsnPorch - Three season porch area in square feet (cont)
 numeric_description(train2$X3SsnPorch, 30)

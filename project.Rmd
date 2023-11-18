@@ -668,35 +668,40 @@ pairwise.wilcox.test(train2$SalePrice, train2$MSSubClass)
 
 ## Missing values and imputation
 
-First, we chack which variables have NA's and then we decide wheather we impute or not. 
+First, we check which variables have NA's and then we decide whether we impute or not. 
 ```{r}
-## NA's
 skim(train2)
 sum(is.na(train2$LotFrontage))
 sum(is.na(train2$MasVnrArea))
 sum(is.na(train2$GarageYrBlt))
+```
 
-## impute
-# exclude GarageYrBlt feature because it has no sense to impute this variable
-
+We exclude the imputation of the GarageYrBlt feature because it has no sense to impute this variable. 
+```{r}
 mice_imp<-mice(train2[, !names(train2) %in% "GarageYrBlt"],method = "cart")
-
-#densityplot(train2)
 imputed_data<-complete(mice_imp)
+```
+
+We proceed to validate the imputation
+
+```{r}
 # LotFrontage validation
 summary(imputed_data$LotFrontage)
 summary(train2$LotFrontage)
 plot(density(train2$LotFrontage,na.rm=TRUE))
 plot(density(imputed_data$LotFrontage,na.rm=TRUE))
-# imputation doesnt change much the density nor summary
+```
+The imputation doesn't change much the density nor summary. 
 
+
+```{r}
 # MasVnrArea validation
 summary(imputed_data$MasVnrArea)
 summary(train2$MasVnrArea)
 plot(density(train2$MasVnrArea,na.rm=TRUE))
 plot(density(imputed_data$MasVnrArea,na.rm=TRUE))
-# imputation doesnt change much the density nor summary
 ```
+The imputation doesnt change much the density nor summary
 
 ## Data Quality Exploration
 

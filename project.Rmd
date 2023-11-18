@@ -482,7 +482,7 @@ table(train2$HasPorch_binary)
 
 ```{r}
 numeric_description(train2$X3SsnPorch, 30)
-table(train2$X3SsnPorch) # very centered in 0 -> dont have three season porch
+#table(train2$X3SsnPorch) # very centered in 0 -> dont have three season porch
 analyze_outliers(train2,"X3SsnPorch")
 train2 <- update_outliers_count(train2, "X3SsnPorch")
 
@@ -509,7 +509,8 @@ train2 <- update_outliers_count(train2, "PoolArea")
 train2$Pool_binary<-0
 train2$Pool_binary[which(train2$PoolArea!=0)]<-1
 train2$Pool_binary<-as.factor(train2$Pool_binary)
-table(train2$Pool_binary) # not very usefull , the majority dont have pools
+table(train2$Pool_binary) # not very usefull , the majority dont have pools, very centered
+#train2$Pool_binary<-NULL
 ```
 
 ## MiscVal - $Value of miscellaneous feature (cont)
@@ -517,7 +518,7 @@ table(train2$Pool_binary) # not very usefull , the majority dont have pools
 ```{r}
 numeric_description(train2$MiscVal, 30)
 # not normally distributed
-table(train2$MiscVal) # very centered in 0 
+#table(train2$MiscVal) # very centered in 0 
 analyze_outliers(train2,"MiscVal")
 train2 <- update_outliers_count(train2, "MiscVal")
 
@@ -836,12 +837,6 @@ Given the evidence below, we argue that the price is dependent on the level of E
 ---Secondly, the wilcoxon test shows that the means of these levels are not equal meaning that some relation exists between the factor and the response variable
 
 ```{r}
-ggplot(imputed_data, aes(x=SalePrice, fill=ExterQual)) +
- geom_density(alpha=.5)
-
-ggplot(imputed_data, aes(y=SalePrice, fill=ExterQual)) +
- geom_boxplot(alpha=0.5)
-
 
 ```
 We perform pairwise wilcoxon test to check for similar means. Looking at the boxplot 
@@ -1006,7 +1001,9 @@ n00<- lm(log(SalePrice) ~ LotArea + OverallQual + OverallCond + YearBuilt +
                   PoolArea, data = train_new)
 #summary(n00)
 summary(n00)$r.squared
+par(mfrow=c(2,2))
 plot(n00)
+par(mfrow=c(1,1))
 influencePlot(n00)
 #corrplot(descrCor, method = 'number') 
 # check if there are any correlated predictors
@@ -1077,7 +1074,9 @@ boxTidwell(log(SalePrice) ~ I(PoolArea+0.01),~ log(LotArea)+ OverallQual + Overa
 
 #summary(v1)
 summary(v1)$r.squared
-#plot(v1)
+par(mfrow=c(2,2))
+plot(v1)
+par(mfrow=c(1,1))
 #influencePlot(v1)
 which(as.vector(vif(v1))>treshold_vif(summary(v1)$r.squared))# there are not highly correlated variables in the model
 
@@ -1305,13 +1304,11 @@ anova(b7,b9)  # not better model
 AIC(b7,b9)
 treshold_vif(summary(b9)$r.squared)
 
+
 AIC(b7,b71,b3,b31,b2,b21,b1,b11) # b31 better but too many df, -> we keep b3
 
 # now we have done a forward stepwise, we can see if we need all the variables doing a backwards stepwise, we can see that in the model: LotFrontage PoolArea and GarageType are less influental, for better explainability we can not consider it in our model.
 final_model<-b3
-summary(final_model)
-vif(final_model)
-plot(final_model)
 
 ```
 
@@ -1327,9 +1324,16 @@ results
 
 ## interpret the model
 
+The Residuals vs Fitted plot shows that the residuals follow a good linear pattern, which meets the regression assumptions very well. The Normal Q-Q plot shows that the standard errors are mostly normally distributed with a small amount of deviating prediction at the
+upper end of the tail and the beginning of the tail. The scale-location plot shows that homoscedasticity is satisfied as a nearly straight line is obtained. 
+The residuals vs leverage plot shows that our model includes some high-leverage (so highly influential in our model) points that deviate significantly (more than 4 standardized residuals away) and asymmetrically from the prediction. An influence plot further confirms this believe
 ```{r}
 summary(final_model)
+par(mfrow=c(2,2))
+plot(final_model)
+
 coefficients <- coef(final_model)
 coefficients
 ```
 
+We can see the coefficient with largest value (in absolute value) is log(X1stFlrSF) with positive impact, 0.385. Meaning that with all other things being equal(c.p) when the first floor square feet increases, the log-price also increases. Also, the level "BsmtQualNo Basement" has negative impact (-0.227). Meaning that the houses that have no basement will have a decrease on the sales price (c.p). 

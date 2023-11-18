@@ -43,8 +43,8 @@ par(mfrow=c(1,1))
 ```
 ## Load dataset
 ```{r}
-setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
-#setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
+#setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
+setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
 train<-read.delim("train.csv", sep=',') 
 ```
 
@@ -229,6 +229,8 @@ train2$f.LotArea <- ifelse(
 
 train2$f.LotArea<- factor(train2$f.LotArea, labels=c("LowLotArea","MidLotArea","HighLotArea"), order = T, levels=c(1,2,3))
 table(train2$f.LotArea)
+ggplot(train2, aes(y=SalePrice, fill=f.LotArea)) + geom_boxplot(alpha=0.5)
+
 ```
 
 ### "OverallQual" (cont)
@@ -495,7 +497,7 @@ table(train2$OpenPorch_binary)
 
 ```{r}
 summary(train2$EnclosedPorch)
-table(train2$EnclosedPorch) # very centered data in 0
+#table(train2$EnclosedPorch) # very centered data in 0
 sum(is.na(train2$EnclosedPorch))
 hist(train2$EnclosedPorch, breaks = 30, freq = F)
 # therefore we will create a factor 0 if they dont have enclosed porch area,1 if they do have.
@@ -535,7 +537,7 @@ train2 <- update_outliers_count(train2, "ScreenPorch")
 ```{r}
 numeric_description(train2$PoolArea, 30)
 # not normally distributed
-table(train2$PoolArea) # very centered in 0 -> dont have pool
+#table(train2$PoolArea) # very centered in 0 -> dont have pool
 analyze_outliers(train2,"PoolArea")
 train2 <- update_outliers_count(train2, "PoolArea")
 # create a new variable : 0=no pool/1= pool
@@ -720,8 +722,10 @@ We proceed to validate the imputation.
 # LotFrontage validation
 summary(imputed_data$LotFrontage)
 summary(train2$LotFrontage)
+par(mfrow=c(1,2))
 plot(density(train2$LotFrontage,na.rm=TRUE))
 plot(density(imputed_data$LotFrontage,na.rm=TRUE))
+par(mfrow=c(1,1))
 ```
 
 Checking the results we can conclude that the imputation doesn't have a significant change in the density nor the summary. 
@@ -730,8 +734,10 @@ Checking the results we can conclude that the imputation doesn't have a signific
 # MasVnrArea validation
 summary(imputed_data$MasVnrArea)
 summary(train2$MasVnrArea)
+par(mfrow=c(1,2))
 plot(density(train2$MasVnrArea,na.rm=TRUE))
 plot(density(imputed_data$MasVnrArea,na.rm=TRUE))
+par(mfrow=c(1,1))
 ```
 
 # Data Quality Exploration
@@ -767,7 +773,7 @@ We filter variables in order to have only those with similar distribution of val
 We are not taking off these outliers because the length is 44 and taking into account the dimensions of our dataset, 1460, it would be a reduction of the 3%.
 Also, we have performed other Moutliers in order to see different scenarios that we consider rare data.
 
-```{r}
+```{r, warning=FALSE}
 # 1. All variable with similar high unique values
 n_cols <- names(imputed_data)[sapply(imputed_data, is.numeric)]
 n_cols <- n_cols[n_cols != "Id"]
@@ -862,20 +868,10 @@ res.con$quali
 
 ```
 
-## Dependence of the average SalesPrice and the level of ExterQual
-
-With the ExterQual factor we want to argue if the average SalesPrice depends on the level of ExterQual.
-
-We used pairwise Wilcoxon tests to compare means, and from the boxplot and distribution plot, it was evident they weren't going to be similar. The Wilcoxon test results confirmed our hypothesis, showing a clear difference between the means of the different quartiles.
-
-```{r, warning=false}
-pairwise.wilcox.test(imputed_data$SalePrice, imputed_data$ExterQual)
-
-```
 
 # Modeling
 
-To create a model, first we split the train data (imputed_data) into train_new and test_new. We need the test_new to validate the accuracy of the model with data that has the target variable and the model has not used. To check if the model has overfitting.
+To create a model, first we split the train data (imputed_data) into train_new and test_new. We need the test_new to validate the accuracy of the model with data that has the target variable and the model has not used, to check if the model has overfitting.
 
 ```{r}
 set.seed(123)
@@ -1084,11 +1080,6 @@ boxTidwell(log(SalePrice) ~ I(X2ndFlrSF+0.01),~ log(LotArea)+ OverallQual + Over
                   ScreenPorch + PoolArea,data=train_new, max.iter = 70 ) # we dont need
 
 
-boxTidwell(log(SalePrice) ~ I(PoolArea+0.01),~ log(LotArea)+ OverallQual + OverallCond + YearBuilt +
-                  BsmtFinSF1  + BsmtFinSF2+X1stFlrSF + X2ndFlrSF+
-                  BsmtFullBath + KitchenAbvGr + Fireplaces + GarageCars  +
-                  ScreenPorch,data=train_new, max.iter = 70 ) # no either
-
 
 #summary(v1)
 summary(v1)$r.squared
@@ -1167,7 +1158,7 @@ b11<- lm(log(SalePrice) ~ (LotFrontage + log(LotArea) + OverallQual + OverallCon
         , data = train_new)
 #summary(b11)
 summary(b11)$r.squared
-anova(b1,b11) # better with interactions
+anova(b1,b11) # the model is better with interactions but for explainability reasons we will not consider the interactions
 AIC(b1,b11)
 
 
@@ -1221,7 +1212,7 @@ b31<- lm(log(SalePrice) ~ (LotFrontage + log(LotArea) + OverallQual + OverallCon
 
 #summary(b31)
 summary(b31)$r.squared
-anova(b3,b31) #  better model with interactions 
+anova(b3,b31) #  better model with interactions but we will not consider them for explainability pourposes
 AIC(b3,b31)
 
 
@@ -1323,10 +1314,37 @@ anova(b7,b9)  # not better model
 AIC(b7,b9)
 treshold_vif(summary(b9)$r.squared)
 
+#f.LotArea
+b10<- lm(log(SalePrice) ~ LotFrontage + log(LotArea) + OverallQual + OverallCond + YearBuilt +
+                  BsmtFinSF1  + log(X1stFlrSF)+ X2ndFlrSF  +
+                  BsmtFullBath + FullBath   + TotRmsAbvGrd+
+                  KitchenAbvGr + Fireplaces + GarageCars  +
+                  ScreenPorch + PoolArea +ExterQual + BsmtQual + KitchenQual+GarageType+f.LotArea
+        , data = train_new)
 
-AIC(b7,b71,b3,b31,b2,b21,b1,b11) # b31 better but too many df, -> we keep b3
+#summary(b10)
+summary(b10)$r.squared
+anova(b7,b10) # not better model
+AIC(b7,b10)
+treshold_vif(summary(b10)$r.squared)
+vif(b10) 
 
-# now we have done a forward stepwise, we can see if we need all the variables doing a backwards stepwise, we can see that in the model: LotFrontage PoolArea and GarageType are less influental, for better explainability we can not consider it in our model.
+
+b12<- lm(log(SalePrice) ~ LotFrontage + log(LotArea) + OverallQual + OverallCond + YearBuilt +
+                  BsmtFinSF1  + log(X1stFlrSF)+ X2ndFlrSF  +
+                  BsmtFullBath + FullBath   + TotRmsAbvGrd+
+                  KitchenAbvGr + Fireplaces + GarageCars  +
+                  ScreenPorch + PoolArea +ExterQual + BsmtQual + KitchenQual+GarageType+HasPorch_binary
+        , data = train_new)
+
+#summary(b11)
+summary(b11)$r.squared
+anova(b7,b11) # a little better model, but not much, we better keep simpler model
+AIC(b7,b11)
+
+
+AIC(b7,b71,b3,b31,b2,b21,b1,b11)
+
 final_model<-b3
 
 ```
@@ -1365,7 +1383,7 @@ betas_cutoff <- 2 / sqrt(dim(train_new)[1]);betas_cutoff
 influencePlot(final_model, id=list(n=3, method="noteworthy"))
 
 ```
-```{r, warning=false}
+```{r, warning=FALSE }
 llcoo <-c("1424","811","1183")
 # residual outliers
 llres <- which(abs(rstudent(final_model))>qnorm(0.995));length(llres)

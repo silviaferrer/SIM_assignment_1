@@ -41,7 +41,7 @@ par(mfrow=c(1,1))
 
 
 ```
-##Load dataset
+## Load dataset
 ```{r}
 setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
 #setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
@@ -227,7 +227,7 @@ train2$f.LotArea <- ifelse(
   )
 )
 
-train2$f.LotArea<- factor(train2$f.LotArea, labels=c("LowQual","MidQual","HighQual"), order = T, levels=c(1,2,3))
+train2$f.LotArea<- factor(train2$f.LotArea, labels=c("LowLotArea","MidLotArea","HighLotArea"), order = T, levels=c(1,2,3))
 table(train2$f.LotArea)
 ```
 
@@ -264,6 +264,8 @@ train2 <- update_outliers_count(train2, "YearRemodAdd")
 numeric_description(train2$MasVnrArea, 10)# not normal distribution
 analyze_outliers(train2,"MasVnrArea")
 train2 <- update_outliers_count(train2, "MasVnrArea")
+# find values that are NA instead of 0
+# if it has a material but a 0 in masvnrarea is a NA
 train2$MasVnrArea[which(train2$MasVnrArea == 0)] <- NA
 none_idx <- which(train$MasVnrType == 'None')
 train2$MasVnrArea[none_idx] <- 0
@@ -787,7 +789,7 @@ abline(h=res.out$cutoff, col="red")
 abline(v=res.out$cutoff, col="red")
 
 # take off m outliers
-#df = df[-which((res.out$md > res.out$cutoff)&(res.out$rd > res.out$cutoff)),]
+#imputed_data <- imputed_data[-which((res.out$md > res.out$cutoff)&(res.out$rd > res.out$cutoff)),]
 
 # 2. Generally the houses built latetly are the ones with most quality
 res.out <- Moutlier(imputed_data[,c("YearBuilt","OverallQual")], quantile = 0.9995, col="green")
@@ -860,30 +862,15 @@ res.con$quali
 
 ```
 
-## Define a polytomic factor ExterQual, evaluates the quality of the material on the exterior, and argue if the average price depends on the level of ExterQual
+## Dependence of the average SalesPrice and the level of ExterQual
 
-Define a polytomic factor f.age for the covariate car age according to its quartiles and argue if the average price depends on the level of age. Statistically justify the answer
+With the ExterQual factor we want to argue if the average SalesPrice depends on the level of ExterQual.
 
-Given the evidence below, we argue that the price is dependent on the level of ExterQual. Firstly, in the boxplots it can be observed that the better the quality (Q1) the lower the average of the house sale price. This is also seen clearly in the distribution plot below. 
----Secondly, the wilcoxon test shows that the means of these levels are not equal meaning that some relation exists between the factor and the response variable
+We used pairwise Wilcoxon tests to compare means, and from the boxplot and distribution plot, it was evident they weren't going to be similar. The Wilcoxon test results confirmed our hypothesis, showing a clear difference between the means of the different quartiles.
 
-```{r}
-
-```
-We perform pairwise wilcoxon test to check for similar means. Looking at the boxplot and distribution plot we can already expect that these are not going to be similar. The result of the wilcoxon test indicates our hypothesis was right that there is a clear difference between the means of the different quartiles
-
-```{r}
+```{r, warning=false}
 pairwise.wilcox.test(imputed_data$SalePrice, imputed_data$ExterQual)
 
-## LowAge LowMidAge HighMidAge
-## LowMidAge <2e-16 - - 
-## HighMidAge <2e-16 <2e-16 - 
-## HighAge <2e-16 <2e-16 <2e-16
-
-#We perform pairwise wilcoxon test to check for similar means. Looking at the boxplot 
-#and distribution plot we can already expect that these are not going to be similar. The 
-#result of the wilcoxon test indicates our hypothesis was right that there is a clear 
-#difference between the means of the different quartiles
 ```
 
 # Modeling
@@ -1114,7 +1101,7 @@ which(as.vector(vif(v1))>treshold_vif(summary(v1)$r.squared))# there are not hig
 ```
 
 ## Select the best model
-Therefore we have 2 potential models. We have been looking on the accuracy of the model, currently on 87% (will deppend on the seed), but we need to check if there is overfitting using the test sample. 
+Therefore we have 2 potential models. We have been looking on the accuracy of the model, currently on 87% (will depend on the seed), but we need to check if there is overfitting using the test sample. 
 Looking at these results, seems that the model has no overfitting. No significant difference on the measures of the model between the train sample and the test.
 
 ```{r}
@@ -1366,10 +1353,10 @@ length(priori)
 ```
 ## Study the presence of a posteriori influential values
 
-Taking a look to cook’s distance outliers, 3 influent data are found and are removed from the sample.
+For studying the posteriori influential values, we have looked to cook’s distance outliers, where 3 influent data are found and are removed from the sample.
 The best model is then reconstructed on this new data set and compared with its original to see the difference. 
-----From the summary, it can be observed that the change mostly affected the coefficients of ?????. 
-The R-squared of the model has increased up to 0.95.
+Comparing the previous coefficients and the current coefficients, we can say that the change has no relevant changes in the coefficients. 
+The R-squared of the model has increased up to 0.94.
 
 ```{r}
 betas <- as.data.frame(dfbetas(final_model))
@@ -1399,6 +1386,20 @@ par(mfrow=c(2,2))
 plot(final_modelp)
 
 
+coef_orig <- coef(final_model)
+coef_filt <- coef(final_modelp)
+
+#common variables
+var_com <- intersect(names(coef_orig), names(coef_filt))
+
+coef_orig <- coef_orig[var_com]
+coef_filt <- coef_filt[var_com]
+
+coef_comparison <- data.frame(Variable = names(coef_orig),
+                               Original_coefficient = coef_orig,
+                               Filtered_coefficient = coef_filt)
+print(coef_comparison)
+
 
 results <- data.frame(Model = c("Model with train_new sample",
                                 "Model with test_new sample"),
@@ -1412,7 +1413,7 @@ results
 ## Interpret the Model
 The Residuals vs Fitted plot shows that the residuals follow a good linear pattern, which meets the regression assumptions very well. The Normal Q-Q plot shows that the standard errors are mostly normally distributed with a small amount of deviating prediction at the
 upper end of the tail and the beginning of the tail. The scale-location plot shows that homoscedasticity is satisfied as a nearly straight line is obtained. 
-The residuals vs leverage plot shows that our model includes some high-leverage (so highly influential in our model) points that deviate significantly (more than 4 standardized residuals away) and asymmetrically from the prediction. An influence plot further confirms this believe
+The residuals vs leverage plot shows that our model includes some high-leverage (so highly influential in our model) points that deviate significantly (more than 4 standardized residuals away) and asymmetrically from the prediction. An influence plot further confirms this believe.
 ```{r}
 summary(final_model)
 par(mfrow=c(2,2))

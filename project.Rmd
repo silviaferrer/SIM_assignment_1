@@ -705,16 +705,19 @@ The imputation doesnt change much the density nor summary
 
 ## Data Quality Exploration
 
-# Correlation Matrix
-When we are analysing the instances which have a count of univariate outliers higher than 2, a total of 10 instances, we can see that BsmtFinSF2 values are generally above the mean, and the same happens with the ScreenPorch and the PoolArea.
-The correlation matrix shows a moderate negative correlation to the BsmtUnfSF (then the less Unfinished square feet of basement area, the more univ outliers) and a significant positive correlation to both BsmtFinSF2, Type 2 finished square feet, and ScreenPorch.
+To check the quality of the dataset we have a count on each individual of the univariate outliers. We can see that there are 7 instances that have 4 or more univariate outliers, therefore are candidates to delete from the analysis. 
 
 ```{r}
-max(imputed_data$univ_outl_count) #10
+max(imputed_data$univ_outl_count) 
 ind_delete<-imputed_data[which(imputed_data$univ_outl_count > 3),]
 imputed_data<-imputed_data[-c(ind_delete)$Id,]
-cols <- num_cols[! num_cols %in% c("Id","GarageYrBlt")]
+```
 
+# Correlation Matrix
+
+The correlation matrix shows a moderate negative correlation to the BsmtUnfSF (then the less Unfinished square feet of basement area, the more univ outliers) and a significant positive correlation to both BsmtFinSF2, Type 2 finished square feet, and ScreenPorch.
+```{r}
+cols <- num_cols[! num_cols %in% c("Id","GarageYrBlt")]
 df_of_interest <- imputed_data[,c(cols,"univ_outl_count")]
 cor_outl = cor(df_of_interest)
 par(mfrow=c(1,1))

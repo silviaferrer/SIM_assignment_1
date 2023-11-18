@@ -2,16 +2,25 @@
 title: "Assignment 1"
 author: "Alicia Chimeno & Silvia Ferrer"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
 ---
+
+<style type="text/css">
+  body{
+  font-size: 12pt;
+}
+</style>
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Clear space and Load dataset
-
-```{r}
+## Clear space and Libraries
+```{r, include=FALSE}
 # Libraries
 library(tidyverse)
 library(skimr)
@@ -27,13 +36,15 @@ library(dplyr)
 library(caret)
 library(FactoMineR)
 library(corrplot)
-
 rm(list=ls())
 par(mfrow=c(1,1))
 
+
+```
+##Load dataset
+```{r}
 setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
 #setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
-
 train<-read.delim("train.csv", sep=',') 
 ```
 
@@ -41,7 +52,7 @@ train<-read.delim("train.csv", sep=',')
 We start by looking at an overview of our dataset.
 ```{r}
 dim(train)
-names(train)
+#names(train)
 str(train)
 #skim(train)
 ```
@@ -81,7 +92,7 @@ train$MoSold <- factor(train$MoSold) # month
 We asses a normality test to the target variable. We reject null hypothesis (H0: variable is normal), therefore we shall not consider that the target variable is normally distributed.
 ```{r}
 res.con <- condes(train,81)
-res.con$quali
+head(res.con$quali)
 shapiro.test(train$SalePrice)  
 qqnorm(train$SalePrice)
 qqline(train$SalePrice)
@@ -171,7 +182,7 @@ The order of this descriptive analysis follows the criteria of splitting into nu
 
 ```{r}
 skim(train2) # overall exploration
-names(train2)
+#names(train2)
 ```
 
 ## Numerical variables
@@ -454,7 +465,7 @@ which(train$GarageFinish=='No Garage')
 
 ```{r}
 numeric_description(train2$WoodDeckSF, 30) # not normal distribution
-table(train2$WoodDeckSF) # centered data in 0
+#table(train2$WoodDeckSF) # centered data in 0
 analyze_outliers(train2, "WoodDeckSF")
 train2 <- update_outliers_count(train2, "WoodDeckSF")
 sm<-summary(train2$WoodDeckSF)
@@ -467,7 +478,7 @@ numeric_description(train2$OpenPorchSF, 30)
 analyze_outliers(train2,"OpenPorchSF")
 train2 <- update_outliers_count(train2, "OpenPorchSF")
 summary(train2$OpenPorchSF)
-table(train2$OpenPorchSF) # very centered data in 0
+#table(train2$OpenPorchSF) # very centered data in 0
 sum(is.na(train2$OpenPorchSF))
 barplot(table(train2$OpenPorchSF), main = "Distribution of ",xlab = "Number of ",col = "skyblue")
 sm<-summary(train2$OpenPorchSF)
@@ -489,7 +500,7 @@ hist(train2$EnclosedPorch, breaks = 30, freq = F)
 train2$EnclosedPorch_binary<-0
 train2$EnclosedPorch_binary[which(train2$EnclosedPorch!=0)]<-1
 train2$EnclosedPorch_binary<-as.factor(train2$EnclosedPorch_binary)
-table(train2$EnclosedPorch_binary)
+#table(train2$EnclosedPorch_binary)
 
 # create new variable - has porch or not - mixing both binary variables
 train2$HasPorch_binary<-0
@@ -502,7 +513,7 @@ table(train2$HasPorch_binary)
 
 ```{r}
 numeric_description(train2$X3SsnPorch, 30)
-table(train2$X3SsnPorch) # very centered in 0 -> dont have three season porch
+#table(train2$X3SsnPorch) # very centered in 0 -> dont have three season porch
 analyze_outliers(train2,"X3SsnPorch")
 train2 <- update_outliers_count(train2, "X3SsnPorch")
 
@@ -511,9 +522,8 @@ train2 <- update_outliers_count(train2, "X3SsnPorch")
 ### ScreenPorch - Screen porch area in square feet (cont)
 
 ```{r}
-numeric_description(train2$ScreenPorch, 30)
-# not normally distributed
-table(train2$ScreenPorch) # very centered in 0 -> dont have screen porch
+numeric_description(train2$ScreenPorch, 30) # not normally distributed
+#table(train2$ScreenPorch) # very centered in 0 -> dont have screen porch
 analyze_outliers(train2,"ScreenPorch")
 train2 <- update_outliers_count(train2, "ScreenPorch")
 ```
@@ -530,7 +540,8 @@ train2 <- update_outliers_count(train2, "PoolArea")
 train2$Pool_binary<-0
 train2$Pool_binary[which(train2$PoolArea!=0)]<-1
 train2$Pool_binary<-as.factor(train2$Pool_binary)
-table(train2$Pool_binary) # not very usefull , the majority dont have pools
+table(train2$Pool_binary) # not very usefull , the majority dont have pools, very centered
+#train2$Pool_binary<-NULL
 ```
 
 ### MiscVal - $Value of miscellaneous feature (cont)
@@ -538,7 +549,7 @@ table(train2$Pool_binary) # not very usefull , the majority dont have pools
 ```{r}
 numeric_description(train2$MiscVal, 30)
 # not normally distributed
-table(train2$MiscVal) # very centered in 0 
+#table(train2$MiscVal) # very centered in 0 
 analyze_outliers(train2,"MiscVal")
 train2 <- update_outliers_count(train2, "MiscVal")
 
@@ -564,11 +575,10 @@ barplot(table(train2$Neighborhood), main = "Distribution of Neighborhood",xlab =
 pie(table(train2$Neighborhood), main = "Distribution of Neighborhood", col = rainbow(length(levels(train2$Neighborhood))))
 
 # analysis with the target variable
-ggplot(train2, aes(x=SalePrice, fill=Neighborhood)) +
- geom_density(alpha=.5)
+#ggplot(train2, aes(x=SalePrice, fill=Neighborhood)) +geom_density(alpha=.5)
 ggplot(train2, aes(y=SalePrice, fill=Neighborhood)) +
  geom_boxplot(alpha=0.5)
-pairwise.wilcox.test(train2$SalePrice, train2$Neighborhood)
+#pairwise.wilcox.test(train2$SalePrice, train2$Neighborhood)
 
 ```
 
@@ -580,11 +590,9 @@ table(train2$ExterQual)
 barplot(table(train2$ExterQual), main = "Distribution of the exterior material quality",xlab = "Qualification",col = "skyblue")
 
 # analysis with the target variable
-ggplot(train2, aes(x=SalePrice, fill=ExterQual)) +
- geom_density(alpha=.5)
-ggplot(train2, aes(y=SalePrice, fill=ExterQual)) +
- geom_boxplot(alpha=0.5)
-pairwise.wilcox.test(train2$SalePrice, train2$ExterQual)
+#ggplot(train2, aes(x=SalePrice, fill=ExterQual)) +geom_density(alpha=.5)
+ggplot(train2, aes(y=SalePrice, fill=ExterQual)) +geom_boxplot(alpha=0.5)
+#pairwise.wilcox.test(train2$SalePrice, train2$ExterQual)
 ```
 
 ### BsmtQual - Evaluates the height of the basement
@@ -596,11 +604,9 @@ barplot(table(train2$BsmtQual), main = "Distribution of Basement height Quality"
 #pie(table(train2$BsmtQual), main = "Distribution of BsmtQual", col = rainbow(length(levels(train2$BsmtQual))))
 
 # analysis with the target variable
-ggplot(train2, aes(x=SalePrice, fill=BsmtQual)) +
- geom_density(alpha=.5)
-ggplot(train2, aes(y=SalePrice, fill=BsmtQual)) +
- geom_boxplot(alpha=0.5)
-pairwise.wilcox.test(train2$SalePrice, train2$BsmtQual)
+#ggplot(train2, aes(x=SalePrice, fill=BsmtQual)) +geom_density(alpha=.5)
+ggplot(train2, aes(y=SalePrice, fill=BsmtQual)) + geom_boxplot(alpha=0.5)
+#pairwise.wilcox.test(train2$SalePrice, train2$BsmtQual)
 ```
 
 ### KitchenQual - Kitchen quality
@@ -611,12 +617,10 @@ table(train2$KitchenQual)
 barplot(table(train2$KitchenQual), main = "Distribution of Kitchen Quality",xlab = "Qualification",col = "skyblue")
 
 # analysis with the target variable
-ggplot(train2, aes(x=SalePrice, fill=KitchenQual)) +
- geom_density(alpha=.5)
-ggplot(train2, aes(y=SalePrice, fill=KitchenQual)) +
- geom_boxplot(alpha=0.5)
-pairwise.wilcox.test(train2$SalePrice, train2$KitchenQual)
-ks.test(train2$SalePrice[train2$KitchenQual=="TA"],train2$SalePrice[train2$KitchenQual=="Fa"]) # test if we can join certain categoris together to make a easier analysis ->rejected
+#ggplot(train2, aes(x=SalePrice, fill=KitchenQual)) +geom_density(alpha=.5)
+ggplot(train2, aes(y=SalePrice, fill=KitchenQual)) + geom_boxplot(alpha=0.5)
+#pairwise.wilcox.test(train2$SalePrice, train2$KitchenQual)
+#ks.test(train2$SalePrice[train2$KitchenQual=="TA"],train2$SalePrice[train2$KitchenQual=="Fa"]) # test if we can join certain categoris together to make a easier analysis ->rejected
 ```
 
 ### GarageFinish - Interior finish of the garage
@@ -627,11 +631,10 @@ table(train2$GarageFinish)
 barplot(table(train2$GarageFinish), main = "Garage Finish Distribution",xlab = "Type",col = "skyblue")
 
 # analysis with the target variable
-ggplot(train2, aes(x=SalePrice, fill=GarageFinish)) +
- geom_density(alpha=.5)
+#ggplot(train2, aes(x=SalePrice, fill=GarageFinish)) +geom_density(alpha=.5)
 ggplot(train2, aes(y=SalePrice, fill=GarageFinish)) +
  geom_boxplot(alpha=0.5)
-pairwise.wilcox.test(train2$SalePrice, train2$GarageFinish)
+#pairwise.wilcox.test(train2$SalePrice, train2$GarageFinish)
 ```
 
 ### FireplaceQu - Fireplace quality
@@ -642,11 +645,10 @@ table(train2$FireplaceQu)
 barplot(table(train2$FireplaceQu), main = "Fireplace quality Distribution",xlab = "Qualification",col = "skyblue")
 
 # analysis with the target variable
-ggplot(train2, aes(x=SalePrice, fill=FireplaceQu)) +
- geom_density(alpha=.5)
+#ggplot(train2, aes(x=SalePrice, fill=FireplaceQu)) +geom_density(alpha=.5)
 ggplot(train2, aes(y=SalePrice, fill=FireplaceQu)) +
  geom_boxplot(alpha=0.5)
-pairwise.wilcox.test(train2$SalePrice, train2$FireplaceQu)
+#pairwise.wilcox.test(train2$SalePrice, train2$FireplaceQu)
 ```
 
 ### Foundation - Type of foundation
@@ -657,11 +659,10 @@ table(train2$Foundation)
 barplot(table(train2$Foundation), main = "Type of foundation Distribution",xlab = "Type",col = "skyblue")
 
 # analysis with the target variable
-ggplot(train2, aes(x=SalePrice, fill=Foundation)) +
- geom_density(alpha=.5)
+#ggplot(train2, aes(x=SalePrice, fill=Foundation)) +geom_density(alpha=.5)
 ggplot(train2, aes(y=SalePrice, fill=Foundation)) +
  geom_boxplot(alpha=0.5)
-pairwise.wilcox.test(train2$SalePrice, train2$Foundation)
+#pairwise.wilcox.test(train2$SalePrice, train2$Foundation)
 
 ```
 
@@ -673,11 +674,10 @@ table(train2$GarageType)
 barplot(table(train2$GarageType), main = "Garage Location Distribution",xlab = "Garage Location",col = "skyblue")
 
 # analysis with the target variable
-ggplot(train2, aes(x=SalePrice, fill=GarageType)) +
- geom_density(alpha=.5)
+#ggplot(train2, aes(x=SalePrice, fill=GarageType)) +geom_density(alpha=.5)
 ggplot(train2, aes(y=SalePrice, fill=GarageType)) +
  geom_boxplot(alpha=0.5)
-pairwise.wilcox.test(train2$SalePrice, train2$GarageType)
+#pairwise.wilcox.test(train2$SalePrice, train2$GarageType)
 
 ```
 
@@ -689,11 +689,10 @@ table(train2$MSSubClass) # +classes
 barplot(table(train2$MSSubClass), main = "Garage Location Distribution",xlab = "Garage Location",col = "skyblue")
 
 # analysis with the target variable
-ggplot(train2, aes(x=SalePrice, fill=MSSubClass)) +
- geom_density(alpha=.5)
+#ggplot(train2, aes(x=SalePrice, fill=MSSubClass)) +geom_density(alpha=.5)
 ggplot(train2, aes(y=SalePrice, fill=MSSubClass)) +
  geom_boxplot(alpha=0.5)
-pairwise.wilcox.test(train2$SalePrice, train2$MSSubClass)
+#pairwise.wilcox.test(train2$SalePrice, train2$MSSubClass)
 
 ```
 
@@ -701,7 +700,7 @@ pairwise.wilcox.test(train2$SalePrice, train2$MSSubClass)
 
 Checking which variables have NA's we can see that LotFrontage, MasVnrArea and GarageYrBlt are the ones with missing values.
 ```{r}
-skim(train2)
+#skim(train2)
 sum(is.na(train2$LotFrontage))
 sum(is.na(train2$MasVnrArea))
 sum(is.na(train2$GarageYrBlt))
@@ -869,12 +868,6 @@ Given the evidence below, we argue that the price is dependent on the level of E
 ---Secondly, the wilcoxon test shows that the means of these levels are not equal meaning that some relation exists between the factor and the response variable
 
 ```{r}
-ggplot(imputed_data, aes(x=SalePrice, fill=ExterQual)) +
- geom_density(alpha=.5)
-
-ggplot(imputed_data, aes(y=SalePrice, fill=ExterQual)) +
- geom_boxplot(alpha=0.5)
-
 
 ```
 We perform pairwise wilcoxon test to check for similar means. Looking at the boxplot and distribution plot we can already expect that these are not going to be similar. The result of the wilcoxon test indicates our hypothesis was right that there is a clear difference between the means of the different quartiles
@@ -930,17 +923,17 @@ sort(unique(vec), decreasing = TRUE)[5];which(descrCor == sort(unique(vec), decr
 ## Build different models with their metrics
 We start by building the model with a manual stepwise technique, we will check the R^2, RSS and AIC metrics to select the better model. We can start by adding the more correlated numerical variables to the target variable. 
 
-```{r}
+```{r echo = T, results = 'hide'}
 display(m0 <- lm(SalePrice ~ 1, data = train_new))
 display(m0 <- lm(log(SalePrice) ~ 1, data = train_new))
 display(m1 <- lm(log(SalePrice) ~ OverallQual , data = train_new))
-plot(m1)
+#plot(m1)
 anova(m0,m1) # rss
 as.matrix(AIC(m0, m1)) 
 
 display(m2 <- lm(log(SalePrice) ~ OverallQual*log(GrLivArea), data = train_new)) # with interaction
 display(m2 <- lm(log(SalePrice) ~ OverallQual+log(GrLivArea), data = train_new)) # without interaction
-plot(m2)
+#plot(m2)
 anova(m1,m2)
 as.matrix(AIC(m1, m2))
 
@@ -1029,16 +1022,18 @@ summary(mod.fow)
 
 # Models: 
 
-display(n00<- lm(log(SalePrice) ~ LotArea + OverallQual + OverallCond + YearBuilt +
+n00<- lm(log(SalePrice) ~ LotArea + OverallQual + OverallCond + YearBuilt +
                   MasVnrArea + BsmtFinSF1 + BsmtFinSF2 + BsmtUnfSF +
                   X1stFlrSF + X2ndFlrSF  +
                   BsmtFullBath + FullBath + HalfBath + BedroomAbvGr +
                   KitchenAbvGr + Fireplaces + GarageCars  +
                   OpenPorchSF + X3SsnPorch + ScreenPorch +
-                  PoolArea, data = train_new))
-summary(n00)
+                  PoolArea, data = train_new)
+#summary(n00)
 summary(n00)$r.squared
+par(mfrow=c(2,2))
 plot(n00)
+par(mfrow=c(1,1))
 influencePlot(n00)
 corrplot(descrCor, method = 'color')
 
@@ -1049,14 +1044,14 @@ treshold_vif<-function(rsq){
 }
 
 treshold_vif(summary(n00)$r.squared)
-vif(n00) # there is not
+vif(n00) # there are not
 which(as.vector(vif(n00))>treshold_vif(summary(n00)$r.squared))# there are not highly correlated variables in the model
 
 # delete with a backwards stepwise : MasVnrArea, FullBath, HalfBath, BedroomAbvGr,OpenPorchSF, X3SsnPorch
-display(n0<- lm(log(SalePrice) ~  LotArea + OverallQual + OverallCond + YearBuilt +
+n0<- lm(log(SalePrice) ~  LotArea + OverallQual + OverallCond + YearBuilt +
                   BsmtFinSF1  + BsmtFinSF2+ X1stFlrSF+ X2ndFlrSF +
                   BsmtFullBath + KitchenAbvGr + Fireplaces + GarageCars  +
-                  ScreenPorch + PoolArea, data = train_new))
+                  ScreenPorch + PoolArea, data = train_new)
 ```
 
 ##  Plot to show which transformations we shall apply
@@ -1064,10 +1059,10 @@ display(n0<- lm(log(SalePrice) ~  LotArea + OverallQual + OverallCond + YearBuil
 # Check BoxTidwell tests: 
 # We guess that the variables with a higher range will have a logaritmic transformation (the area variables)
 
-display(n0<- lm(log(SalePrice) ~  LotArea + OverallQual + OverallCond + YearBuilt +
+n0<- lm(log(SalePrice) ~  LotArea + OverallQual + OverallCond + YearBuilt +
                   BsmtFinSF1  + BsmtFinSF2+ X1stFlrSF+ X2ndFlrSF +
                   BsmtFullBath + KitchenAbvGr + Fireplaces + GarageCars  +
-                  ScreenPorch + PoolArea, data = train_new))
+                  ScreenPorch + PoolArea, data = train_new)
 
 # we do BoxTidwall test to see which transformations we shall apply in the predictors to make a better model. 
 # LotArea
@@ -1076,10 +1071,10 @@ boxTidwell(log(SalePrice) ~ LotArea, ~OverallQual + OverallCond + YearBuilt +
                   BsmtFullBath + KitchenAbvGr + Fireplaces + GarageCars  +
                   ScreenPorch + PoolArea,data=train_new, max.iter = 70 )
 
-display(v0<- lm(log(SalePrice) ~  log(LotArea) + OverallQual + OverallCond + YearBuilt +
+v0<- lm(log(SalePrice) ~  log(LotArea) + OverallQual + OverallCond + YearBuilt +
                   BsmtFinSF1  + BsmtFinSF2+ X1stFlrSF+ X2ndFlrSF +
                   BsmtFullBath + KitchenAbvGr + Fireplaces + GarageCars  +
-                  ScreenPorch + PoolArea, data = train_new))
+                  ScreenPorch + PoolArea, data = train_new)
 # we shall convert the LotArea variable into logaritmic
 
 # X1stFlrSF
@@ -1088,10 +1083,10 @@ boxTidwell(log(SalePrice) ~ X1stFlrSF,~ log(LotArea)+ OverallQual + OverallCond 
                   BsmtFullBath + KitchenAbvGr + Fireplaces + GarageCars  +
                   ScreenPorch + PoolArea,data=train_new, max.iter = 70 )
 
-display(v1<- lm(log(SalePrice) ~  log(LotArea) + OverallQual + OverallCond + YearBuilt +
+v1<- lm(log(SalePrice) ~  log(LotArea) + OverallQual + OverallCond + YearBuilt +
                   BsmtFinSF1  + BsmtFinSF2+ log(X1stFlrSF)+ X2ndFlrSF +
                   BsmtFullBath + KitchenAbvGr + Fireplaces + GarageCars  +
-                  ScreenPorch + PoolArea, data = train_new))
+                  ScreenPorch + PoolArea, data = train_new)
 
 
 # X2stFlrSF
@@ -1108,12 +1103,13 @@ boxTidwell(log(SalePrice) ~ I(PoolArea+0.01),~ log(LotArea)+ OverallQual + Overa
                   ScreenPorch,data=train_new, max.iter = 70 ) # no either
 
 
-summary(v1)
+#summary(v1)
 summary(v1)$r.squared
+par(mfrow=c(2,2))
 plot(v1)
-influencePlot(v1)
+par(mfrow=c(1,1))
+#influencePlot(v1)
 which(as.vector(vif(v1))>treshold_vif(summary(v1)$r.squared))# there are not highly correlated variables in the model
-
 
 ```
 
@@ -1147,14 +1143,14 @@ results
 ## Add categorical variables to the model
 Now we shall proceed to adding the categorical variables for our model creation. We now add to the model 
 ```{r}
-names(train_new)
+#names(train_new)
 b0<- lm(log(SalePrice) ~ LotFrontage + log(LotArea) + OverallQual + OverallCond + YearBuilt +
                   BsmtFinSF1  + log(X1stFlrSF)+ X2ndFlrSF  +
                   BsmtFullBath + FullBath   + TotRmsAbvGrd+
                   KitchenAbvGr + Fireplaces + GarageCars  +
                   ScreenPorch + PoolArea + Neighborhood
         , data = train_new)
-summary(b0)
+#summary(b0)
 summary(b0)$r.squared
 anova(v1,b0)
 AIC(v1,b0)
@@ -1169,7 +1165,7 @@ b1<- lm(log(SalePrice) ~ LotFrontage + log(LotArea) + OverallQual + OverallCond 
                   ScreenPorch + PoolArea +ExterQual
         , data = train_new)
 
-summary(b1)
+#summary(b1)
 summary(b1)$r.squared
 anova(n0,b1)
 AIC(n0,b1)
@@ -1182,7 +1178,7 @@ b11<- lm(log(SalePrice) ~ (LotFrontage + log(LotArea) + OverallQual + OverallCon
                   KitchenAbvGr + Fireplaces + GarageCars  +
                   ScreenPorch + PoolArea)*ExterQual
         , data = train_new)
-summary(b11)
+#summary(b11)
 summary(b11)$r.squared
 anova(b1,b11) # better with interactions
 AIC(b1,b11)
@@ -1195,7 +1191,7 @@ b2<- lm(log(SalePrice) ~ LotFrontage + log(LotArea) + OverallQual + OverallCond 
                   ScreenPorch + PoolArea +ExterQual + BsmtQual
         , data = train_new)
 
-summary(b2)
+#summary(b2)
 summary(b2)$r.squared
 anova(b1,b2)
 AIC(b1,b2)
@@ -1208,7 +1204,7 @@ b21<- lm(log(SalePrice) ~ (LotFrontage + log(LotArea) + OverallQual + OverallCon
                   KitchenAbvGr + Fireplaces + GarageCars  +
                   ScreenPorch + PoolArea +ExterQual) *BsmtQual
         , data = train_new)
-summary(b21)
+#summary(b21)
 summary(b21)$r.squared
 anova(b2,b21) #  better with interaction 
 AIC(b2,b21)
@@ -1222,7 +1218,7 @@ b3<- lm(log(SalePrice) ~ LotFrontage + log(LotArea) + OverallQual + OverallCond 
                   ScreenPorch + PoolArea +ExterQual + BsmtQual + KitchenQual
         , data = train_new)
 
-summary(b3)
+#summary(b3)
 summary(b3)$r.squared
 anova(b2,b3)
 AIC(b2,b3)
@@ -1236,7 +1232,7 @@ b31<- lm(log(SalePrice) ~ (LotFrontage + log(LotArea) + OverallQual + OverallCon
                   ScreenPorch + PoolArea +ExterQual + BsmtQual)* KitchenQual
         , data = train_new)
 
-summary(b31)
+#summary(b31)
 summary(b31)$r.squared
 anova(b3,b31) #  better model with interactions 
 AIC(b3,b31)
@@ -1250,7 +1246,7 @@ b4<- lm(log(SalePrice) ~ LotFrontage + log(LotArea) + OverallQual + OverallCond 
                   ScreenPorch + PoolArea +ExterQual + BsmtQual + KitchenQual+ GarageFinish
         , data = train_new)
 
-summary(b4)
+#summary(b4)
 summary(b4)$r.squared
 anova(b3,b4) # not better model -> we dont use this variable
 AIC(b3,b4)
@@ -1264,7 +1260,7 @@ b5<- lm(log(SalePrice) ~ LotFrontage + log(LotArea) + OverallQual + OverallCond 
                   ScreenPorch + PoolArea +ExterQual + BsmtQual + KitchenQual + FireplaceQu
         , data = train_new)
 
-summary(b5)
+#summary(b5)
 summary(b5)$r.squared
 anova(b3,b5) # not better model
 AIC(b3,b5)
@@ -1278,7 +1274,7 @@ b6<- lm(log(SalePrice) ~ LotFrontage + log(LotArea) + OverallQual + OverallCond 
                   ScreenPorch + PoolArea +ExterQual + BsmtQual + KitchenQual+Foundation
         , data = train_new)
 
-summary(b6)
+#summary(b6)
 summary(b6)$r.squared
 anova(b3,b6)
 AIC(b3,b6)
@@ -1292,7 +1288,7 @@ b7<- lm(log(SalePrice) ~ LotFrontage + log(LotArea) + OverallQual + OverallCond 
                   ScreenPorch + PoolArea +ExterQual + BsmtQual + KitchenQual+GarageType
         , data = train_new)
 
-summary(b7)
+#summary(b7)
 summary(b7)$r.squared
 anova(b3,b7)
 AIC(b3,b7)
@@ -1306,7 +1302,7 @@ b71<- lm(log(SalePrice) ~ (LotFrontage + log(LotArea) + OverallQual + OverallCon
                   ScreenPorch + PoolArea)*GarageType +ExterQual + BsmtQual + KitchenQual
         , data = train_new)
 
-summary(b71)
+#summary(b71)
 summary(b71)$r.squared
 anova(b7,b71) # better model 
 AIC(b7,b71)
@@ -1319,7 +1315,7 @@ b8<- lm(log(SalePrice) ~ LotFrontage + log(LotArea) + OverallQual + OverallCond 
                   ScreenPorch + PoolArea +ExterQual + BsmtQual + KitchenQual+GarageType+MSSubClass
         , data = train_new)
 
-summary(b8)
+#summary(b8)
 summary(b8)$r.squared
 anova(b7,b8) # not better model
 AIC(b7,b8)
@@ -1334,19 +1330,17 @@ b9<- lm(log(SalePrice) ~ LotFrontage + log(LotArea) + OverallQual + OverallCond 
                   ScreenPorch + PoolArea +ExterQual + BsmtQual + KitchenQual+GarageType+BsmtFinType1
         , data = train_new)
 
-summary(b9)
+#summary(b9)
 summary(b9)$r.squared
 anova(b7,b9)  # not better model
 AIC(b7,b9)
 treshold_vif(summary(b9)$r.squared)
 
+
 AIC(b7,b71,b3,b31,b2,b21,b1,b11) # b31 better but too many df, -> we keep b3
 
 # now we have done a forward stepwise, we can see if we need all the variables doing a backwards stepwise, we can see that in the model: LotFrontage PoolArea and GarageType are less influental, for better explainability we can not consider it in our model.
-final_model<-b7
-summary(final_model)
-vif(final_model)
-plot(final_model)
+final_model<-b3
 
 ```
 
@@ -1415,3 +1409,17 @@ results <- data.frame(Model = c("Model with train_new sample",
 results
 ```
 
+## Interpret the Model
+The Residuals vs Fitted plot shows that the residuals follow a good linear pattern, which meets the regression assumptions very well. The Normal Q-Q plot shows that the standard errors are mostly normally distributed with a small amount of deviating prediction at the
+upper end of the tail and the beginning of the tail. The scale-location plot shows that homoscedasticity is satisfied as a nearly straight line is obtained. 
+The residuals vs leverage plot shows that our model includes some high-leverage (so highly influential in our model) points that deviate significantly (more than 4 standardized residuals away) and asymmetrically from the prediction. An influence plot further confirms this believe
+```{r}
+summary(final_model)
+par(mfrow=c(2,2))
+plot(final_model)
+
+coefficients <- coef(final_model)
+coefficients
+```
+
+We can see the coefficient with largest value (in absolute value) is log(X1stFlrSF) with positive impact, 0.385. Meaning that with all other things being equal(c.p) when the first floor square feet increases, the log-price also increases. Also, the level "BsmtQualNo Basement" has negative impact (-0.227). Meaning that the houses that have no basement will have a decrease on the sales price (c.p). 

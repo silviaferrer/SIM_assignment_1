@@ -1365,10 +1365,10 @@ The Residuals vs Fitted plot shows that the residuals follow a good linear patte
 upper end of the tail and the beginning of the tail. The scale-location plot shows that homoscedasticity is satisfied as a nearly straight line is obtained. 
 The residuals vs leverage plot shows that our model includes some high-leverage (so highly influential in our model) points that deviate significantly (more than 4 standardized residuals away) and asymmetrically from the prediction. An influence plot further confirms this believe.
 ```{r}
-summary(final_model)
+summary(final_modelp)
 par(mfrow=c(2,2))
-plot(final_model)
-coefficients <- coef(final_model);coefficients
+plot(final_modelp)
+coefficients <- coef(final_modelp);coefficients
 ```
 We can see the coefficient with largest value (in absolute value) is log(X1stFlrSF) with positive impact, 0.385. Meaning that with all other things being equal(c.p) when the first floor square feet increases, the log-price also increases.  Larger first-floor areas are often associated with more spacious living arrangements, which can contribute to higher property values. 
 \n \n

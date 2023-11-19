@@ -1483,6 +1483,17 @@ coefficients <- coef(final_model)
 coefficients
 ```
 
-We can see the coefficient with largest value (in absolute value) is log(X1stFlrSF) with positive impact, 0.385. Meaning that with all other things being equal(c.p) when the first floor square feet increases, the log-price also increases. Also, the level "BsmtQualNo Basement" has negative impact (-0.227). Meaning that the houses that have no basement will have a decrease on the sales price (c.p). 
+We can see the coefficient with largest value (in absolute value) is log(X1stFlrSF) with positive impact, 0.385. Meaning that with all other things being equal(c.p) when the first floor square feet increases, the log-price also increases.  Larger first-floor areas are often associated with more spacious living arrangements, which can contribute to higher property values. 
+\n \n
+Continuing with the analysis of the coefficients, the variable "BsmtQualNo Basement" is noteworthy due to its substantial negative impact of -0.227. This suggests that houses without a basement tend to have a significant decrease in their sales price, all else being equal. Basements often contribute to the overall living space and functionality of a house, so the absence of this feature appears to have a notable effect on the property's value.
+\n \n
+The presence of a fireplace, as indicated by the variable "Fireplaces," has a positive coefficient of 0.0248. This suggests that houses with fireplaces tend to have higher predicted sales prices. Fireplaces are often considered desirable features, providing both functional and aesthetic benefits, which can positively impact a property's perceived value.
+\n \n
+
+Variables related to kitchen quality, such as "KitchenQualFa" (Kitchen Quality Fair) and "KitchenQualTA" (Kitchen Quality Typical), both have negative coefficients of -0.064 and -0.075, respectively. This indicates that, compared to higher-quality kitchens, houses with fair or typical kitchen quality are associated with lower predicted sales prices. Kitchens are known to be focal points for homebuyers, and a well-appointed kitchen is often considered a positive attribute.
+\n \n
+
+In conclusion, the coefficients shed light on various aspects that influence the predicted sales prices of houses in the model. Factors such as the house square feet, the presence of a fireplace, and the quality of the kitchen and exterior all play roles in determining the estimated market value of a property.
+
 
 ## Annex

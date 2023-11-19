@@ -1282,6 +1282,85 @@ results <- data.frame(Model = c("Model with train_new sample","Model with test_n
                       RMSE = round(c(rmse(exp(fitted(final_modelp)), train_new$SalePrice),
                                rmse(exp(predict(final_modelp, newdata = test_new)), test_new$SalePrice)),2));results
 ```
+
+# Test predictions
+## Test standarization
+```{r}
+test<-read.delim("test.csv", sep=',') 
+test$Alley[which(is.na(test$Alley))] <- "No alley access"
+test$BsmtQual[which(is.na(test$BsmtQual))] <- "No Basement"
+test$BsmtCond[which(is.na(test$BsmtCond))] <- "No Basement"
+test$BsmtExposure[which(is.na(test$BsmtExposure))] <- "No Basement"
+test$BsmtFinType1[which(is.na(test$BsmtFinType1))] <- "No Basement"
+test$BsmtFinType2[which(is.na(test$BsmtFinType2))] <- "No Basement"
+test$FireplaceQu[which(is.na(test$FireplaceQu))] <- "No Fireplace"
+test$GarageType[which(is.na(test$GarageType))] <- "No Garage"
+test$GarageFinish[which(is.na(test$GarageFinish))] <- "No Garage"
+test$GarageCond[which(is.na(test$GarageCond))] <- "No Garage"
+test$PoolQC[which(is.na(test$PoolQC))] <- "No Pool"
+test$Fence[which(is.na(test$Fence))] <- "No Fence"
+test$MiscFeature[which(is.na(test$MiscFeature))] <- "None"
+char_cols <- which(sapply(test, is.character))
+test[, char_cols] <- lapply(test[, char_cols], as.factor) 
+test$MSSubClass <- factor(test$MSSubClass)
+test$MoSold <- factor(test$MoSold)
+vect<- c("Neighborhood", "ExterQual", "BsmtQual", "KitchenQual", "GarageFinish", "FireplaceQu", "Foundation", "GarageType", "MSSubClass", "BsmtFinType1")
+factor_test<-test[,c(vect)] # select the first 10 factor variables that are more related with the target
+num_cols <- names(test)[sapply(test, is.numeric)]
+test2 <- test[,c(num_cols, vect)]
+
+## NEW FEATURES
+# - EnclosedPorch_binary: 0 = NO enclosed porch area / 1 = they have
+test2$EnclosedPorch_binary<-0
+test2$EnclosedPorch_binary[which(test2$EnclosedPorch!=0)]<-1
+test2$EnclosedPorch_binary<-as.factor(test2$EnclosedPorch_binary)
+
+# - OpenPorch_binary: 0 = NO open porch area / 1 = they have
+test2$OpenPorch_binary<-0
+test2$OpenPorch_binary[which(test2$OpenPorchSF!=0)]<-1
+test2$OpenPorch_binary<-as.factor(test2$OpenPorch_binary)
+
+# - HasPorch_binary: 0 = NO porch area / 1 = they have (mixing both binary variables)
+test2$HasPorch_binary<-0
+test2$HasPorch_binary[which(test2$EnclosedPorch!=0 | test2$OpenPorchSF!=0)]<-1
+test2$HasPorch_binary<-as.factor(test2$HasPorch_binary)
+
+# - Pool_binary: 0 = no pool / 1 = pool
+test2$Pool_binary<-0
+test2$Pool_binary[which(test2$PoolArea!=0)]<-1
+test2$Pool_binary<-as.factor(test2$Pool_binary)
+
+# - secondfloor: 0 = not second floor / 1 = has second floor 
+test2$secondfloor<-0
+test2$secondfloor[which(test2$X2ndFlrSF!=0)]<-1
+test2$secondfloor<-factor(test2$secondfloor)
+
+test2$univ_outl_count <- 0 # initialize
+
+
+columns_to_exclude <- c("Id","univ_outl_count")
+
+# apply the function to each column
+for (column_name in colnames(test2)) {
+  if (!(column_name %in% columns_to_exclude) && is.numeric(test2[[column_name]])) {
+    test2 <- update_outliers_count(test2, column_name)
+  }
+}
+
+mice_imp<-mice(test2[, !names(test2) %in% "GarageYrBlt"],method = "cart")
+imputed_test<-complete(mice_imp)
+
+predictions <- predict(final_model, imputed_test)
+predictions <- exp(predictions)
+prediccion <- data.frame("id"=imputed_test$Id, "SalePrice"=predictions)
+prediccion
+write.table(prediccion, file="SalePrice Prediction", sep="\t", col.names=TRUE, row.names=FALSE)
+
+
+```
+
+
+
 ## Interpret the Model
 The Residuals vs Fitted plot shows that the residuals follow a good linear pattern, which meets the regression assumptions very well. The Normal Q-Q plot shows that the standard errors are mostly normally distributed with a small amount of deviating prediction at the
 upper end of the tail and the beginning of the tail. The scale-location plot shows that homoscedasticity is satisfied as a nearly straight line is obtained. 

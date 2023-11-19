@@ -11,16 +11,11 @@ par(mfrow=c(1,1))
 
 # Load data
 #getwd()
-setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
-#setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
+#setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
+setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
 
 test<-read.delim("test.csv", sep=',') 
 
-# Explore dataset
-dim(test)
-names(test)
-str(test)
-#skim(test)
 
 # Preproces dataset
 
@@ -55,38 +50,32 @@ vect<- c("Neighborhood", "ExterQual", "BsmtQual", "KitchenQual", "GarageFinish",
 factor_test<-test[,c(vect)] # select the first 10 factor variables that are more related with the target
 num_cols <- names(test)[sapply(test, is.numeric)]
 test2 <- test[,c(num_cols, vect)]
-dim(test2)
 
 ## NEW FEATURES
 # - EnclosedPorch_binary: 0 = NO enclosed porch area / 1 = they have
 test2$EnclosedPorch_binary<-0
 test2$EnclosedPorch_binary[which(test2$EnclosedPorch!=0)]<-1
 test2$EnclosedPorch_binary<-as.factor(test2$EnclosedPorch_binary)
-table(test2$EnclosedPorch_binary)
 
 # - OpenPorch_binary: 0 = NO open porch area / 1 = they have
 test2$OpenPorch_binary<-0
 test2$OpenPorch_binary[which(test2$OpenPorchSF!=0)]<-1
 test2$OpenPorch_binary<-as.factor(test2$OpenPorch_binary)
-table(test2$OpenPorch_binary)
 
 # - HasPorch_binary: 0 = NO porch area / 1 = they have (mixing both binary variables)
 test2$HasPorch_binary<-0
 test2$HasPorch_binary[which(test2$EnclosedPorch!=0 | test2$OpenPorchSF!=0)]<-1
 test2$HasPorch_binary<-as.factor(test2$HasPorch_binary)
-table(test2$HasPorch_binary)
 
 # - Pool_binary: 0 = no pool / 1 = pool
 test2$Pool_binary<-0
 test2$Pool_binary[which(test2$PoolArea!=0)]<-1
 test2$Pool_binary<-as.factor(test2$Pool_binary)
-table(test2$Pool_binary) # not very usefull , the majority dont have pools
 
 # - secondfloor: 0 = not second floor / 1 = has second floor 
 test2$secondfloor<-0
 test2$secondfloor[which(test2$X2ndFlrSF!=0)]<-1
 test2$secondfloor<-factor(test2$secondfloor)
-table(test2$secondfloor) 
 
 # - univ_outl_count
 test2$univ_outl_count <- 0 # initialize
@@ -110,3 +99,14 @@ for (column_name in colnames(test2)) {
     test2 <- update_outliers_count(test2, column_name)
   }
 }
+
+mice_imp<-mice(test2[, !names(test2) %in% "GarageYrBlt"],method = "cart")
+imputed_test<-complete(mice_imp)
+
+#plot_missing(imputed_data, missing_only = TRUE, group = list("Low" = 0.05, "Medium"=0.25, "High"=0.5,
+#                                                    "Very High" =1), geom_label_args = list("size" = 2))
+
+
+
+predictions <- predict(final_model, imputed_test)
+predictions <- exp(predictions)

@@ -33,8 +33,8 @@ par(mfrow=c(1,1))
 ```
 # Load dataset
 ```{r, include=FALSE}
-#setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
-setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
+setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
+#setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
 train<-read.delim("train.csv", sep=',') 
 ```
 
@@ -400,6 +400,7 @@ analyze_outliers(train2,"TotRmsAbvGrd")
 train2 <- update_outliers_count(train2, "TotRmsAbvGrd")
 #table(train2$TotRmsAbvGrd)
 sum(is.na(train2$TotRmsAbvGrd))
+barplot(table(train2$TotRmsAbvGrd), main = "Distribution of Rooms",xlab = "Number of Rooms",col = "skyblue")
 
 ```
 

@@ -1353,7 +1353,6 @@ imputed_test<-complete(mice_imp)
 predictions <- predict(final_model, imputed_test)
 predictions <- exp(predictions)
 prediccion <- data.frame("id"=imputed_test$Id, "SalePrice"=predictions)
-prediccion
 write.table(prediccion, file="SalePrice Prediction", sep="\t", col.names=TRUE, row.names=FALSE)
 
 

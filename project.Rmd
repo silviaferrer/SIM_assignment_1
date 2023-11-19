@@ -33,14 +33,14 @@ par(mfrow=c(1,1))
 ```
 # Load dataset
 ```{r, include=FALSE}
-setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
-#setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
+#setwd("C:/Users/Silvia/OneDrive - Universitat Politècnica de Catalunya/Escritorio/UPC/MASTER DS/1A/SIM/SIM_assignment_1")
+setwd("/Users/ali/Desktop/MASTER/SIM/PROJECT 1")
 train<-read.delim("train.csv", sep=',') 
 ```
 
 # Explore and Preproces the dataset
 We start by looking at an overview of our dataset.
-```{r, results='hide'}
+```{r}
 dim(train)
 str(train)
 ```
@@ -302,7 +302,7 @@ table(train2$secondfloor)
 ```{r}
 par(mfrow=c(1,2))
 numeric_description(train2$LowQualFinSF, 10) # not normal distribution
-table(train2$LowQualFinSF)# very centered in 0 
+#table(train2$LowQualFinSF)# very centered in 0 
 analyze_outliers(train2,"LowQualFinSF")
 nearZeroVar(train2$LowQualFinSF, saveMetrics = TRUE) # Variable with near zero variance
 train2 <- update_outliers_count(train2, "LowQualFinSF")
@@ -605,7 +605,7 @@ barplot(table(train2$GarageType), main = "Garage Location Distribution",xlab = "
 ```{r}
 sum(is.na(train2$MSSubClass)) #0
 #table(train2$MSSubClass) # +classes
-barplot(table(train2$MSSubClass), main = "Garage Location Distribution",xlab = "Garage Location",col = "skyblue")
+barplot(table(train2$MSSubClass), main = "MSSubClass Distribution",xlab = "MSSubClass",col = "skyblue")
 ```
 ## Missing values and imputation
 Checking which variables have NA's we can see that LotFrontage, MasVnrArea and GarageYrBlt are the ones with missing values.
